@@ -31,6 +31,7 @@ class Settings(BaseModel):
         "https://frizerie.vercel.app",
         "https://frizerie-git-master-alexandruarmas.vercel.app",
         "https://frizerie-frontend.vercel.app",
+        "https://frizerie-git-master-alexandruarmas02-gmailcoms-projects.vercel.app",
         # Add wildcard for all subdomains to be safe
         "https://*.vercel.app",
         "*"  # Temporarily allow all origins for debugging
