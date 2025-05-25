@@ -20,7 +20,7 @@ class User(Base):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     
     # Relații
-    bookings = relationship("Booking", back_populates="user")
+    # bookings = relationship("Booking", back_populates="user")
     # notifications = relationship("Notification", back_populates="user")
     
     def __repr__(self):
