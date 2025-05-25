@@ -25,13 +25,13 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_PREFIX}/openapi.json"
 )
 
-# Configure CORS with settings from config
+# Configure CORS - TEMPORARILY ALLOW ALL FOR DEBUGGING
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=["Content-Type", "Authorization"],
+    allow_origins=["*"],  # Allow all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods
+    allow_headers=["*"],  # Allow all headers
     expose_headers=["Content-Type", "Authorization"],
     max_age=600,  # Maximum time (in seconds) that preflight request can be cached
 )
