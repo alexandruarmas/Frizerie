@@ -11,6 +11,7 @@
     "turbo:build": "turbo run build"
   },
   "dependencies": {
+    "@types/axios": "^0.9.36",
     "@types/react-router-dom": "^5.3.3",
     "axios": "^1.9.0",
     "react": "^18.2.0",
@@ -19,6 +20,7 @@
     "react-router-dom": "^6.20.0"
   },
   "devDependencies": {
+    "@types/axios-case-converter": "^0.3.1",
     "@types/babel__core": "^7.20.5",
     "@types/babel__generator": "^7.27.0",
     "@types/babel__template": "^7.4.4",
