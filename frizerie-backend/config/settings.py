@@ -25,7 +25,12 @@ class Settings(BaseModel):
     DATABASE_URL: str = "sqlite:///./frizerie.db"  # SQLite for development
     
     # CORS config
-    CORS_ORIGINS: list = ["http://localhost:5173", "http://localhost:5174"]  # Frontend URLs
+    CORS_ORIGINS: list = [
+        "http://localhost:5173", 
+        "http://localhost:5174",
+        "https://frizerie.vercel.app",
+        "https://frizerie-git-master-alexandruarmas.vercel.app"
+    ]  # Frontend URLs
 
     # Note: In Pydantic v2, BaseSettings was moved to pydantic-settings
     # For simplicity, we're using BaseModel instead

@@ -1,8 +1,9 @@
 import axios from 'axios';
 import api from './api';  // Import the configured API instance
 
-// Use the same API URL as in api.ts
-const API_URL = import.meta.env?.VITE_API_URL || 'https://frizerie.onrender.com/api/v1';
+// Use the same API URL as in api.ts but add the /api/v1 prefix for endpoints
+const API_URL = import.meta.env?.VITE_API_URL || 'https://frizerie.onrender.com';
+const API_PREFIX = '/api/v1';
 
 // Define types for auth
 export interface User {
@@ -33,7 +34,7 @@ export interface RegisterData {
 const authService = {
   // Register a new user
   register: async (userData: RegisterData): Promise<AuthResponse> => {
-    const response = await api.post(`/auth/register`, userData);
+    const response = await api.post(`${API_PREFIX}/auth/register`, userData);
     const data = response.data as AuthResponse;
     if (data.token) {
       localStorage.setItem('auth_token', data.token);
@@ -43,7 +44,7 @@ const authService = {
 
   // Login user
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    const response = await api.post(`/auth/login`, credentials);
+    const response = await api.post(`${API_PREFIX}/auth/login`, credentials);
     const data = response.data as AuthResponse;
     if (data.token) {
       localStorage.setItem('auth_token', data.token);
