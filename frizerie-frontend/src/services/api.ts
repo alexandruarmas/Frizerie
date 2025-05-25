@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Get API URL from environment variable or use localhost as fallback
-const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:8000/api/v1';
+// Get API URL from environment variable or use deployed URL as fallback
+const API_URL = import.meta.env?.VITE_API_URL || 'https://frizerie.onrender.com/api/v1';
 
 // Create base API instance
 const api = axios.create({
@@ -15,7 +15,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('auth_token');
-    if (token) {
+    if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -41,11 +41,15 @@ api.interceptors.response.use(
             refresh_token: refreshToken 
           });
           
-          const { access_token } = response.data;
+          // Type assertion for response.data
+          const data = response.data as { access_token: string };
+          const { access_token } = data;
           localStorage.setItem('auth_token', access_token);
           
           // Retry the original request with new token
-          originalRequest.headers.Authorization = `Bearer ${access_token}`;
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${access_token}`;
+          }
           return api(originalRequest);
         }
       } catch (refreshError) {

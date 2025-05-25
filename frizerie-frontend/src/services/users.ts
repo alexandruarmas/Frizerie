@@ -1,7 +1,9 @@
 import axios from 'axios';
 import authService from './auth';
+import api from './api';  // Import the configured API instance
 
-const API_URL = 'http://localhost:8000';
+// Use the same API URL from api.ts
+const API_URL = import.meta.env?.VITE_API_URL || 'https://frizerie.onrender.com/api/v1';
 
 export interface LoyaltyStatus {
   tier: 'BRONZE' | 'SILVER' | 'GOLD' | 'DIAMOND';
@@ -28,35 +30,20 @@ export interface UserProfile {
 const usersService = {
   // Get user profile
   getProfile: async (): Promise<UserProfile> => {
-    const token = authService.getToken();
-    const response = await axios.get(`${API_URL}/users/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-    return response.data;
+    const response = await api.get(`/users/me`);
+    return response.data as UserProfile;
   },
 
   // Update user profile
   updateProfile: async (userData: Partial<UserProfile>): Promise<UserProfile> => {
-    const token = authService.getToken();
-    const response = await axios.put(`${API_URL}/users/me`, userData, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-    return response.data;
+    const response = await api.put(`/users/me`, userData);
+    return response.data as UserProfile;
   },
 
   // Get loyalty status
   getLoyaltyStatus: async (): Promise<LoyaltyStatus> => {
-    const token = authService.getToken();
-    const response = await axios.get(`${API_URL}/users/loyalty-status`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-    return response.data;
+    const response = await api.get(`/users/loyalty-status`);
+    return response.data as LoyaltyStatus;
   },
 
   // For demo/development purposes: simulate loyalty status
