@@ -4,7 +4,6 @@ import api from './api';  // Import the configured API instance
 
 // Use the correct backend URL
 const API_URL = import.meta.env?.VITE_API_URL || 'https://frizerie.onrender.com';
-const API_PREFIX = '/api/v1';
 
 export interface LoyaltyStatus {
   tier: 'BRONZE' | 'SILVER' | 'GOLD' | 'DIAMOND';
@@ -31,19 +30,19 @@ export interface UserProfile {
 const usersService = {
   // Get user profile
   getProfile: async (): Promise<UserProfile> => {
-    const response = await api.get(`${API_PREFIX}/users/me`);
+    const response = await api.get(`/users/me`);
     return response.data as UserProfile;
   },
 
   // Update user profile
   updateProfile: async (userData: Partial<UserProfile>): Promise<UserProfile> => {
-    const response = await api.put(`${API_PREFIX}/users/me`, userData);
+    const response = await api.put(`/users/me`, userData);
     return response.data as UserProfile;
   },
 
   // Get loyalty status
   getLoyaltyStatus: async (): Promise<LoyaltyStatus> => {
-    const response = await api.get(`${API_PREFIX}/users/loyalty-status`);
+    const response = await api.get(`/users/loyalty-status`);
     return response.data as LoyaltyStatus;
   },
 

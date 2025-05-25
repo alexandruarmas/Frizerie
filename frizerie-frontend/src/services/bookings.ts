@@ -4,7 +4,6 @@ import api from './api';  // Import the configured API instance
 
 // Use the correct backend URL
 const API_URL = import.meta.env?.VITE_API_URL || 'https://frizerie.onrender.com';
-const API_PREFIX = '/api/v1';
 
 export interface Booking {
   id: string;
@@ -44,25 +43,25 @@ export interface CheckAvailabilityRequest {
 const bookingsService = {
   // Get all bookings
   getBookings: async (): Promise<Booking[]> => {
-    const response = await api.get(`${API_PREFIX}/bookings`);
+    const response = await api.get(`/bookings`);
     return response.data as Booking[];
   },
 
   // Create a new booking
   createBooking: async (bookingData: BookingRequest): Promise<Booking> => {
-    const response = await api.post(`${API_PREFIX}/bookings`, bookingData);
+    const response = await api.post(`/bookings`, bookingData);
     return response.data as Booking;
   },
 
   // Cancel a booking
   cancelBooking: async (bookingId: string): Promise<Booking> => {
-    const response = await api.post(`${API_PREFIX}/bookings/${bookingId}/cancel`, {});
+    const response = await api.post(`/bookings/${bookingId}/cancel`, {});
     return response.data as Booking;
   },
 
   // Check availability for a specific date/barber/service
   checkAvailability: async (params: CheckAvailabilityRequest): Promise<TimeSlot[]> => {
-    const response = await api.post(`${API_PREFIX}/bookings/check-availability`, params);
+    const response = await api.post(`/bookings/check-availability`, params);
     return response.data as TimeSlot[];
   },
   
