@@ -1,0 +1,10 @@
+_format_version: "2.1"
+
+services:
+- name: frizerie-backend-service
+  url: http://<internal-backend-service-name>:10000
+  routes:
+  - name: frizerie-api-route
+    paths:
+    - /api/v1/
+    strip_path: false # Keep /api/v1/ when forwarding to backend 
