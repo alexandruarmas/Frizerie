@@ -37,10 +37,10 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(auth_router, prefix=settings.API_V1_PREFIX)
-app.include_router(users_router, prefix=settings.API_V1_PREFIX)
-app.include_router(bookings_router, prefix=settings.API_V1_PREFIX)
-app.include_router(notifications_router, prefix=settings.API_V1_PREFIX)
+app.include_router(auth_router)
+app.include_router(users_router)
+app.include_router(bookings_router)
+app.include_router(notifications_router)
 
 # Root endpoint for API health check
 @app.get("/")
