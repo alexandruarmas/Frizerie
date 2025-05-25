@@ -1,0 +1,72 @@
+{
+  "name": "Frizerie Barbershop",
+  "short_name": "Frizerie",
+  "description": "Book haircuts and manage your barbershop appointments",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Book Appointment",
+      "short_name": "Book",
+      "description": "Book a new appointment",
+      "url": "/bookings/new",
+      "icons": [
+        {
+          "src": "icons/booking.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "My Appointments",
+      "short_name": "Appointments",
+      "description": "View your upcoming appointments",
+      "url": "/bookings",
+      "icons": [
+        {
+          "src": "icons/calendar.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "Dashboard view of the Frizerie app"
+    },
+    {
+      "src": "screenshots/booking.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "Booking appointment screen"
+    }
+  ],
+  "categories": ["lifestyle", "productivity"]
+} 
