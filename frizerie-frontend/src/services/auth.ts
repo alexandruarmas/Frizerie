@@ -1,8 +1,8 @@
 import axios from 'axios';
 import api from './api';  // Import the configured API instance
 
-// Use the correct backend URL with proper domain
-const API_URL = import.meta.env?.VITE_API_URL || 'https://frizerie.onrender.com';
+// Use the deployed backend URL
+const API_URL = 'https://frizerie.onrender.com/api/v1';
 
 // Define types for auth
 export interface User {
@@ -33,8 +33,7 @@ export interface RegisterData {
 const authService = {
   // Register a new user
   register: async (userData: RegisterData): Promise<AuthResponse> => {
-    // Use direct axios call with the correct URL for register
-    const response = await axios.post(`${API_URL}/api/v1/users/register`, userData, {
+    const response = await axios.post(`${API_URL}/users/register`, userData, {
       headers: {
         'Content-Type': 'application/json',
       }
@@ -48,8 +47,7 @@ const authService = {
 
   // Login user
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    // Use direct axios call with the correct URL for login
-    const response = await axios.post(`${API_URL}/api/v1/auth/login`, credentials, {
+    const response = await axios.post(`${API_URL}/auth/login`, credentials, {
       headers: {
         'Content-Type': 'application/json',
       }

@@ -14,7 +14,7 @@ class Notification(Base):
     status = Column(String(20), default="pending")  # pending, sent, delivered, failed
     
     # Relationships
-    user = relationship("User", back_populates="notifications")
+    # user = relationship("User", back_populates="notifications")
     
     def __repr__(self):
         return f"<Notification {self.id} for user {self.user_id}>" 

@@ -26,16 +26,11 @@ class Settings(BaseModel):
     
     # CORS config
     CORS_ORIGINS: list = [
-        "http://localhost:5173", 
-        "http://localhost:5174",
-        "https://frizerie.vercel.app",
-        "https://frizerie-git-master-alexandruarmas.vercel.app",
-        "https://frizerie-frontend.vercel.app",
-        "https://frizerie-git-master-alexandruarmas02-gmailcoms-projects.vercel.app",
-        # Add wildcard for all subdomains to be safe
-        "https://*.vercel.app",
-        "*"  # Temporarily allow all origins for debugging
-    ]  # Frontend URLs
+        "http://localhost:5173",  # Local development
+        "http://localhost:5174",  # Local development alternative port
+        "https://frizerie-git-master-alexandruarmas02-gmailcoms-projects.vercel.app",  # Your Vercel deployment
+        "https://*.vercel.app"  # All Vercel subdomains
+    ]
     
     # Set CORS to allow credentials
     CORS_ALLOW_CREDENTIALS: bool = True
