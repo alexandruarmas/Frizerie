@@ -2,8 +2,8 @@ import axios from 'axios';
 import authService from './auth';
 import api from './api';  // Import the configured API instance
 
-// Use the same API URL from api.ts
-const API_URL = import.meta.env?.VITE_API_URL || 'https://frizerie.onrender.com';
+// Use the correct backend URL
+const API_URL = import.meta.env?.VITE_API_URL || 'https://frizerie-backend.onrender.com';
 const API_PREFIX = '/api/v1';
 
 export interface Booking {

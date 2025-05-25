@@ -25,13 +25,15 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_PREFIX}/openapi.json"
 )
 
-# Configure CORS
+# Configure CORS with more detailed settings
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
+    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Type", "Authorization"],
+    max_age=600,  # Maximum time (in seconds) that preflight request can be cached
 )
 
 # Include routers

@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 // Get API URL from environment variable or use deployed URL as fallback
-// Note: The API_URL should not end with /api/v1 as the backend already adds this prefix
-const API_URL = import.meta.env?.VITE_API_URL || 'https://frizerie.onrender.com';
+// Use the correct backend domain
+const API_URL = import.meta.env?.VITE_API_URL || 'https://frizerie-backend.onrender.com';
 
 // Create base API instance
 const api = axios.create({
@@ -38,7 +38,7 @@ api.interceptors.response.use(
         // Try to refresh the token
         const refreshToken = localStorage.getItem('refresh_token');
         if (refreshToken) {
-          const response = await axios.post(`${api.defaults.baseURL}/api/v1/auth/refresh`, { 
+          const response = await axios.post(`${API_URL}/api/v1/auth/refresh`, { 
             refresh_token: refreshToken 
           });
           

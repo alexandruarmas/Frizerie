@@ -29,8 +29,13 @@ class Settings(BaseModel):
         "http://localhost:5173", 
         "http://localhost:5174",
         "https://frizerie.vercel.app",
-        "https://frizerie-git-master-alexandruarmas.vercel.app"
+        "https://frizerie-git-master-alexandruarmas.vercel.app",
+        # Add wildcard for all subdomains to be safe
+        "https://*.vercel.app"
     ]  # Frontend URLs
+    
+    # Set CORS to allow credentials
+    CORS_ALLOW_CREDENTIALS: bool = True
 
     # Note: In Pydantic v2, BaseSettings was moved to pydantic-settings
     # For simplicity, we're using BaseModel instead
