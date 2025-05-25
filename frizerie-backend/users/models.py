@@ -19,8 +19,8 @@ class User(Base):
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     
-    # Temporarily comment out relationships to fix circular dependency
-    # bookings = relationship("Booking", back_populates="user")
+    # Relații
+    bookings = relationship("Booking", back_populates="user")
     # notifications = relationship("Notification", back_populates="user")
     
     def __repr__(self):
