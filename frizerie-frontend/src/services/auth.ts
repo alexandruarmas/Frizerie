@@ -2,7 +2,7 @@ import axios from 'axios';
 import api from './api';  // Import the configured API instance
 
 // Use the correct backend URL with proper domain
-const API_URL = import.meta.env?.VITE_API_URL || 'https://frizerie-backend.onrender.com';
+const API_URL = import.meta.env?.VITE_API_URL || 'https://frizerie.onrender.com';
 const API_PREFIX = '/api/v1';
 
 // Define types for auth
@@ -35,7 +35,7 @@ const authService = {
   // Register a new user
   register: async (userData: RegisterData): Promise<AuthResponse> => {
     // Use direct axios call to avoid api.ts prefix issues
-    const response = await axios.post(`${API_URL}/api/v1/auth/register`, userData);
+    const response = await axios.post(`${API_URL}/api/v1/users/register`, userData);
     const data = response.data as AuthResponse;
     if (data.token) {
       localStorage.setItem('auth_token', data.token);

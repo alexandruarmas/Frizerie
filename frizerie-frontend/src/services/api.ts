@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Get API URL from environment variable or use deployed URL as fallback
 // Use the correct backend domain
-const API_URL = import.meta.env?.VITE_API_URL || 'https://frizerie-backend.onrender.com';
+const API_URL = import.meta.env?.VITE_API_URL || 'https://frizerie.onrender.com';
 
 // Create base API instance
 const api = axios.create({
