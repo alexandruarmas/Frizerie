@@ -49,7 +49,14 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    return {"status": "healthy", "database": settings.DATABASE_URL}
+
+# Add exception handlers for better error reporting
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    import traceback
+    error_detail = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+    return {"detail": str(exc), "traceback": error_detail}
 
 # Custom OpenAPI schema
 def custom_openapi():

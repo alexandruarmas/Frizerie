@@ -22,7 +22,7 @@ class Settings(BaseModel):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
     # Database config
-    DATABASE_URL: str = "sqlite:///./frizerie.db"  # SQLite for development
+    DATABASE_URL: str = os.environ.get("DATABASE_URL", "sqlite:///./frizerie.db")  # Use environment variable or fallback to SQLite
     
     # CORS config
     CORS_ORIGINS: list = [
