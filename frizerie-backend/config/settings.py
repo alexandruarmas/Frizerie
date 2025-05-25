@@ -30,8 +30,10 @@ class Settings(BaseModel):
         "http://localhost:5174",
         "https://frizerie.vercel.app",
         "https://frizerie-git-master-alexandruarmas.vercel.app",
+        "https://frizerie-frontend.vercel.app",
         # Add wildcard for all subdomains to be safe
-        "https://*.vercel.app"
+        "https://*.vercel.app",
+        "*"  # Temporarily allow all origins for debugging
     ]  # Frontend URLs
     
     # Set CORS to allow credentials
