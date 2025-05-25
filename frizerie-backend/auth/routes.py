@@ -5,16 +5,17 @@ from datetime import timedelta
 from config.database import get_db
 from config.settings import get_settings
 from . import services
+from . import schemas # Import the new schemas
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 settings = get_settings()
 
-@router.post("/login")
+@router.post("/login", response_model=schemas.Token)
 async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
+    credentials: schemas.LoginRequest,
     db: Session = Depends(get_db)
 ):
-    user = services.authenticate_user(db, form_data.username, form_data.password)
+    user = services.authenticate_user(db, credentials.email, credentials.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
