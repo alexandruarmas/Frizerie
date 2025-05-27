@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        pre { background-color: #f5f5f5; padding: 10px; border-radius: 5px; overflow: auto; max-height: 500px; }
+        h2 { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>API Documentation Test</h1>
+    
+    <h2>API Tags (Endpoints Groups)</h2>
+    <pre id="tags">Loading...</pre>
+    
+    <h2>API Paths</h2>
+    <pre id="paths">Loading...</pre>
+    
+    <script>
+        async function fetchApiDocs() {
+            try {
+                const response = await fetch('http://localhost:8000/api/v1/openapi.json');
+                const data = await response.json();
+                
+                // Extract and display tags
+                const tagsElement = document.getElementById('tags');
+                const tags = data.tags || [];
+                tagsElement.textContent = JSON.stringify(tags, null, 2);
+                
+                // Extract and display paths
+                const pathsElement = document.getElementById('paths');
+                const paths = Object.keys(data.paths || {});
+                pathsElement.textContent = JSON.stringify(paths, null, 2);
+            } catch (error) {
+                document.getElementById('tags').textContent = 'Error: ' + error.message;
+                document.getElementById('paths').textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        fetchApiDocs();
+    </script>
+</body>
+</html> 

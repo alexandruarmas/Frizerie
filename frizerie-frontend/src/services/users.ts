@@ -1,9 +1,54 @@
 import axios from 'axios';
 import authService from './auth';
+const API_URL = 'https://frizerie.onrender.com/api/v1';
 import api from './api';  // Import the configured API instance
 
-// Use the deployed backend URL
-const API_URL = 'https://frizerie.onrender.com/api/v1';
+export interface LoyaltyReward {
+  id: number;
+  name: string;
+  description?: string;
+  points_cost: number;
+  reward_type: string;
+  reward_value: number;
+  is_active: boolean;
+  valid_from?: string;
+  valid_until?: string;
+  min_tier_required?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LoyaltyRedemption {
+  id: number;
+  user_id: number;
+  reward_id: number;
+  points_spent: number;
+  redeemed_at: string;
+  status: string;
+  booking_id?: number;
+  notes?: string;
+  reward?: LoyaltyReward;
+}
+
+export interface LoyaltyPointsHistory {
+  id: number;
+  user_id: number;
+  points_change: number;
+  reason: string;
+  reference_id?: number;
+  reference_type?: string;
+  created_at: string;
+}
+
+export interface ReferralProgram {
+  id: number;
+  referrer_id: number;
+  referred_id: number;
+  points_awarded: number;
+  status: string;
+  created_at: string;
+  completed_at?: string;
+}
 
 export interface LoyaltyStatus {
   tier: 'BRONZE' | 'SILVER' | 'GOLD' | 'DIAMOND';
@@ -15,6 +60,9 @@ export interface LoyaltyStatus {
     bookings_needed: number;
   };
   perks: string[];
+  points_history: LoyaltyPointsHistory[];
+  available_rewards: LoyaltyReward[];
+  recent_redemptions: LoyaltyRedemption[];
 }
 
 export interface UserProfile {
@@ -42,8 +90,67 @@ const usersService = {
 
   // Get loyalty status
   getLoyaltyStatus: async (): Promise<LoyaltyStatus> => {
-    const response = await api.get(`/users/loyalty-status`);
+    const response = await api.get(`/users/me/loyalty-status`);
     return response.data as LoyaltyStatus;
+  },
+
+  // Get available rewards
+  getAvailableRewards: async (): Promise<LoyaltyReward[]> => {
+    const response = await api.get(`/users/me/loyalty/rewards`);
+    return response.data as LoyaltyReward[];
+  },
+
+  // Redeem a reward
+  redeemReward: async (rewardId: number, bookingId?: number): Promise<LoyaltyRedemption> => {
+    const response = await api.post(`/users/me/loyalty/rewards/${rewardId}/redeem`, {
+      booking_id: bookingId
+    });
+    return response.data as LoyaltyRedemption;
+  },
+
+  // Get points history
+  getPointsHistory: async (skip: number = 0, limit: number = 10): Promise<LoyaltyPointsHistory[]> => {
+    const response = await api.get(`/users/me/loyalty/points-history`, {
+      params: { skip, limit }
+    });
+    return response.data as LoyaltyPointsHistory[];
+  },
+
+  // Create a referral
+  createReferral: async (referredEmail: string): Promise<ReferralProgram> => {
+    const response = await api.post(`/users/me/loyalty/refer`, {
+      referred_email: referredEmail
+    });
+    return response.data as ReferralProgram;
+  },
+
+  // Complete a referral
+  completeReferral: async (referralId: number): Promise<ReferralProgram> => {
+    const response = await api.post(`/users/me/loyalty/referrals/${referralId}/complete`);
+    return response.data as ReferralProgram;
+  },
+
+  // Admin methods
+  createReward: async (rewardData: Partial<LoyaltyReward>): Promise<LoyaltyReward> => {
+    const response = await api.post(`/users/admin/loyalty/rewards`, rewardData);
+    return response.data as LoyaltyReward;
+  },
+
+  updateReward: async (rewardId: number, rewardData: Partial<LoyaltyReward>): Promise<LoyaltyReward> => {
+    const response = await api.put(`/users/admin/loyalty/rewards/${rewardId}`, rewardData);
+    return response.data as LoyaltyReward;
+  },
+
+  getAllRedemptions: async (skip: number = 0, limit: number = 100, status?: string): Promise<LoyaltyRedemption[]> => {
+    const response = await api.get(`/users/admin/loyalty/redemptions`, {
+      params: { skip, limit, status }
+    });
+    return response.data as LoyaltyRedemption[];
+  },
+
+  updateRedemptionStatus: async (redemptionId: number, status: string): Promise<LoyaltyRedemption> => {
+    const response = await api.put(`/users/admin/loyalty/redemptions/${redemptionId}`, { status });
+    return response.data as LoyaltyRedemption;
   },
 
   // For demo/development purposes: simulate loyalty status
@@ -62,7 +169,10 @@ const usersService = {
         'Access to standard appointment slots',
         'Priority booking (24h in advance)',
         '5% discount on products'
-      ]
+      ],
+      points_history: [],
+      available_rewards: [],
+      recent_redemptions: []
     };
   }
 };

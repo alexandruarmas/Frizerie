@@ -1,106 +1,97 @@
 # Frizerie - Barbershop Appointment System
 
-This is a modern appointment booking system for barbershops and hair salons, featuring VIP loyalty tiers, real-time booking, and notification system.
+This is a modern, full-stack appointment booking system for barbershops and hair salons. It features user authentication, booking management with real-time availability, a VIP loyalty system, notifications, payment processing, and analytics.
 
-## Features
+It is composed of two main parts:
 
-- **User Authentication**: Secure login/register with JWT tokens
-- **Appointment Booking**: View and book appointments with real-time availability
-- **VIP Loyalty System**: Tiered membership with exclusive perks and time slots
-- **Notifications**: Booking confirmations and appointment reminders
-- **Profile Management**: Update personal information and view loyalty status
-- **Progressive Web App (PWA)**: Support for mobile and offline usage
+- **Backend**: A FastAPI application providing the API (see [frizerie-backend/README.md](../frizerie-backend/README.md))
+- **Frontend**: A React application built with Vite, TypeScript, and Tailwind CSS
+
+## Frontend Features
+
+- User Authentication (Login, Registration)
+- User Profile and Loyalty Status Viewing
+- Browse Stylists and Services
+- Real-time Appointment Booking Interface
+- View and Manage User Bookings
+- Payment Integration for Bookings
+- Notification Settings Management
+- Responsive UI with Tailwind CSS
+- Progressive Web App (PWA) readiness
+
+For a detailed list of backend features, please refer to the [backend README](../frizerie-backend/README.md).
 
 ## Project Structure
 
-The project consists of two main parts:
-
-- **Frontend**: React application with Vite, TypeScript, and Tailwind CSS
-- **Backend**: FastAPI application with SQLAlchemy ORM and SQLite database
-
-### Frontend Structure
 ```
 frizerie-frontend/
+├── public/       # Static assets (like index.html, icons, manifest.json)
+│   └── ...
 ├── src/
-│   ├── auth/         - Authentication context and hooks
-│   ├── components/   - UI components
-│   ├── pages/        - Page components
-│   ├── services/     - API service functions
-│   ├── App.tsx       - Main application component
-│   └── main.tsx      - Application entry point
-└── ...
-```
-
-### Backend Structure
-```
-frizerie-backend/
-├── auth/             - Authentication logic and routes
-├── bookings/         - Booking management logic and routes
-├── config/           - Application configuration
-├── notifications/    - Notification system
-├── users/            - User management and VIP loyalty
-└── main.py           - Application entry point
+│   ├── api/          # Centralized API service functions (using Axios or Fetch)
+│   ├── assets/       # Static assets used in components (images, svgs)
+│   ├── components/   # Reusable UI components
+│   ├── context/      # React Context for global state (e.g., AuthContext)
+│   ├── hooks/        # Custom React hooks
+│   ├── pages/        # Top-level components for different routes
+│   ├── types/        # TypeScript type definitions
+│   ├── utils/        # Utility functions
+│   ├── App.tsx       # Main application component and routing setup
+│   └── main.tsx      # Application entry point (ReactDOM rendering)
+├── .env.example  # Example environment variables for frontend
+├── index.html    # Main HTML file
+├── package.json  # npm dependencies and scripts
+├── postcss.config.js # PostCSS configuration (for Tailwind)
+├── tailwind.config.js # Tailwind CSS configuration
+├── tsconfig.json # TypeScript configuration
+└── vite.config.ts # Vite build configuration
 ```
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 14.18+ or 16+
-- Python 3.9+
+- Node.js (LTS version recommended)
 - npm or yarn
 
 ### Installation
 
-1. Clone the repository
-2. Install backend dependencies:
+1. Clone the repository:
    ```bash
-   cd frizerie-backend
-   pip install fastapi uvicorn sqlalchemy pydantic[email] python-jose[cryptography] passlib[bcrypt] python-multipart
-   cd ..
-   ```
-3. Install frontend dependencies:
-   ```bash
+   git clone <repository_url>
    cd frizerie-frontend
-   npm install
-   cd ..
    ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   # or yarn install
+   ```
+
+3. Create a `.env` file in the `frizerie-frontend` directory based on `.env.example` and configure necessary environment variables (e.g., the backend API URL).
 
 ### Running the Application
 
-#### Using the start script:
-Simply run the `start.bat` file in the root directory, which will start both the backend and frontend servers.
+It is recommended to use the provided start scripts in the project root directory (`start.bat` for Windows, `start.sh` for Linux/macOS) which will start both the backend and frontend servers simultaneously.
 
-#### Manual startup:
-1. Start the backend:
-   ```bash
-   cd frizerie-backend
-   python main.py
-   ```
-2. Start the frontend:
-   ```bash
-   cd frizerie-frontend
-   npm run dev
-   ```
+Alternatively, you can start the frontend manually:
 
-The frontend will be available at `http://localhost:5173` (or the port shown in the console) and the backend API at `http://localhost:8000`.
+```bash
+cd frizerie-frontend
+npm run dev
+# or yarn dev
+```
 
-## VIP Loyalty System
+The frontend development server will typically be available at `http://localhost:5173`. The console output will show the exact URL.
 
-The application features a tiered loyalty system:
-
-- **Bronze**: Default tier (0-99 points)
-- **Silver**: 100-199 points, priority booking
-- **Gold**: 200-299 points, priority booking + 10% discount
-- **Diamond**: 300+ points, priority booking + 10% discount + free products
-
-Users earn loyalty points for each booking, and certain time slots are reserved for VIP members.
+Ensure the backend server is also running for the application to function correctly.
 
 ## API Documentation
 
-When the backend is running, you can access the API documentation at:
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
+The backend API documentation (Swagger UI/ReDoc) can be accessed when the backend server is running:
+
+- Swagger UI: `http://localhost:8000/api/v1/docs`
+- ReDoc: `http://localhost:8000/api/v1/redoc`
 
 ## Building for Production
 
@@ -109,11 +100,23 @@ To build the frontend for production:
 ```bash
 cd frizerie-frontend
 npm run build
+# or yarn build
 ```
+
+The production-ready files will be generated in the `dist/` directory.
 
 To preview the production build:
 
 ```bash
 cd frizerie-frontend
 npm run preview
-``` 
+# or yarn preview
+```
+
+## Contributing
+
+We welcome contributions! Please see the [CONTRIBUTING.md](../CONTRIBUTING.md) file for details on how to contribute.
+
+## License
+
+This project is licensed under the MIT License. 

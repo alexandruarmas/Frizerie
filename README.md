@@ -10,6 +10,18 @@ Frizerie is a modern appointment booking system for barbershops and hair salons,
 - **Notifications**: SMS and in-app notifications for appointments
 - **Responsive UI**: Works on desktop and mobile devices
 
+## New Features
+
+- **Admin Panel**: New admin panel for managing users, bookings, and system settings.
+- **Analytics**: Advanced analytics and reporting services for tracking user activity and business metrics.
+- **Payment Processing**: Integrated payment processing with analytics.
+- **Search Functionality**: Enhanced search capabilities for users and bookings.
+- **File Management**: Improved file upload and management system.
+- **Error Logging**: Comprehensive error logging and handling.
+- **Validation**: Robust input validation middleware and schemas.
+- **Background Tasks**: Support for background tasks and asynchronous processing.
+- **External Services**: Integration with external services for enhanced functionality.
+
 ## Project Structure
 
 The project consists of two main parts:
@@ -35,12 +47,34 @@ frizerie-frontend/
 
 ```
 frizerie-backend/
-├── auth/             - Authentication logic and routes
-├── bookings/         - Booking management logic and routes
-├── config/           - Application configuration
-├── notifications/    - Notification system
-├── users/            - User management and VIP loyalty
-└── main.py           - Application entry point
+├── admin/             - Admin panel and management routes
+├── analytics/         - Analytics and reporting services
+├── auth/              - Authentication logic and routes
+├── bookings/          - Booking management logic and routes
+├── config/            - Application configuration
+├── core/              - Core utilities and security
+├── errors/            - Error handling and custom exceptions
+├── error_logging/     - Error logging middleware and services
+├── files/             - File upload and management
+├── notifications/     - Notification system
+├── payments/          - Payment processing and analytics
+├── search/            - Search functionality
+├── services/          - General service layer
+├── stylists/          - Stylist management
+├── users/             - User management and VIP loyalty
+├── utils/             - Utility functions (email, SMS, etc.)
+├── validation/        - Input validation middleware and schemas
+├── app_logging/       - Application logging middleware and handlers
+├── TESTS/             - Test suite and fixtures
+├── alembic_migrations/ - Database migrations
+├── migrations/        - Additional migration files
+├── static/            - Static files
+├── uploads/           - Uploaded files storage
+├── logs/              - Log files
+├── external_services/ - External service integrations
+├── tasks/             - Background tasks
+├── main.py            - Application entry point
+└── requirements.txt   - Backend dependencies
 ```
 
 ## Getting Started
