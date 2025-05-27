@@ -27,3 +27,4 @@ openpyxl==3.1.2
 psycopg2-binary
 aiosmtplib
 firebase-admin
+pandas
