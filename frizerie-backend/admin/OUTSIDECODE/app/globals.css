@@ -1,0 +1,142 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 10% 3%;
+    --foreground: 180 100% 90%;
+    --card: 220 13% 5%;
+    --card-foreground: 180 100% 90%;
+    --popover: 220 13% 5%;
+    --popover-foreground: 180 100% 90%;
+    --primary: 180 100% 50%;
+    --primary-foreground: 220 13% 5%;
+    --secondary: 300 100% 50%;
+    --secondary-foreground: 220 13% 5%;
+    --muted: 220 13% 10%;
+    --muted-foreground: 180 50% 70%;
+    --accent: 120 100% 50%;
+    --accent-foreground: 220 13% 5%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 180 50% 20%;
+    --input: 180 50% 15%;
+    --ring: 180 100% 50%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Inter", system-ui, sans-serif;
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .cyber-border {
+    @apply border border-cyan-400/30 relative;
+  }
+
+  .cyber-border::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(0, 255, 255, 0.1) 50%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .cyber-glow {
+    @apply shadow-lg;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3), 0 0 20px rgba(0, 255, 255, 0.1);
+  }
+
+  .cyber-text {
+    @apply text-cyan-400;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  }
+
+  .cyber-bg {
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.1) 0%, rgba(255, 0, 255, 0.1) 100%);
+  }
+
+  .matrix-bg {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .matrix-bg::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: linear-gradient(90deg, transparent 98%, rgba(0, 255, 255, 0.1) 100%),
+      linear-gradient(0deg, transparent 98%, rgba(0, 255, 255, 0.1) 100%);
+    background-size: 20px 20px;
+    pointer-events: none;
+    opacity: 0.3;
+  }
+
+  .scan-line {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .scan-line::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.8), transparent);
+    animation: scan-line 3s linear infinite;
+  }
+
+  .neon-button {
+    @apply relative overflow-hidden;
+    background: linear-gradient(45deg, rgba(0, 255, 255, 0.1), rgba(255, 0, 255, 0.1));
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .neon-button:hover {
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+    border-color: rgba(0, 255, 255, 0.6);
+  }
+
+  .data-grid {
+    background: linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #00ffff, #ff00ff);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #00cccc, #cc00cc);
+}

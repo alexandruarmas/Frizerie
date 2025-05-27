@@ -1,0 +1,5 @@
+You can now start your backend and it should connect to the database with no migration errors.
+You can safely develop, test, and add data.
+If you add new models or fields, just run:
+  alembic revision --autogenerate -m "Describe your change"
+  alembic upgrade head

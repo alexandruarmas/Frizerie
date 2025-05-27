@@ -1,14 +1,24 @@
-from typing import List, Dict, Any
+from stylists.models import Stylist
+from booking.models import StylistAvailability, StylistTimeOff, Booking
+from typing import List, Dict, Any, Optional
 from datetime import datetime, time, timedelta
 import json
 from sqlalchemy.orm import Session
+from sqlalchemy import and_, or_, func
 from fastapi import HTTPException, status
+import logging # Import logging 
 
 from . import models
-from users.models import User
+from users.models import User, UserSetting # Import User and UserSetting models
+from services.models import Service # Import Service model
+from notifications.services import create_notification # Import create_notification
+from notifications.models import NotificationType # Import NotificationType enum
 
 # In a real app, these would interact with the database
 # These are just placeholders
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 async def get_bookings_by_user_id(user_id: int) -> List[Dict[str, Any]]:
     """
@@ -39,7 +49,8 @@ async def get_bookings_by_user_id(user_id: int) -> List[Dict[str, Any]]:
         ]
     return []
 
-async def create_booking(user_id: int, stylist_id: int, service: str, date_str: str, time_str: str) -> Dict[str, Any]:
+# This async function seems to be a leftover from mock data, keeping it for now but might need refactoring
+async def create_booking_mock(user_id: int, stylist_id: int, service: str, date_str: str, time_str: str) -> Dict[str, Any]:
     """
     Create a new booking.
     In a real app, this would save to the database.
@@ -56,7 +67,8 @@ async def create_booking(user_id: int, stylist_id: int, service: str, date_str: 
         "status": "pending"
     }
 
-async def get_stylist_by_id(stylist_id: int) -> Dict[str, Any]:
+# This async function seems to be a leftover from mock data, keeping it for now but might need refactoring
+async def get_stylist_by_id_mock(stylist_id: int) -> Dict[str, Any]:
     """
     Get a stylist by ID.
     In a real app, this would query the database.
@@ -93,7 +105,8 @@ async def get_stylist_by_id(stylist_id: int) -> Dict[str, Any]:
     
     return stylists.get(stylist_id)
 
-async def get_available_slots(stylist_id: int, date_str: str) -> List[str]:
+# This async function seems to be a leftover from mock data, keeping it for now but might need refactoring
+async def get_available_slots_mock(stylist_id: int, date_str: str) -> List[str]:
     """
     Get available time slots for a stylist on a specific date.
     In a real app, this would check the database for available slots.
@@ -103,7 +116,7 @@ async def get_available_slots(stylist_id: int, date_str: str) -> List[str]:
     day_of_week = date.strftime("%A").lower()
     
     # Get stylist's schedule
-    stylist = await get_stylist_by_id(stylist_id)
+    stylist = await get_stylist_by_id_mock(stylist_id)
     if not stylist:
         return []
     
@@ -114,191 +127,294 @@ async def get_available_slots(stylist_id: int, date_str: str) -> List[str]:
     
     # In a real app, you'd check existing bookings and remove booked slots
     # For now, just return all available slots
-    return all_slots 
+    return all_slots
 
-def get_stylists(db: Session) -> List[models.Stylist]:
+def get_stylists(db: Session) -> List[Stylist]:
     """Get all stylists."""
-    return db.query(models.Stylist).all()
+    return db.query(Stylist).all()
 
-def get_stylist(db: Session, stylist_id: int) -> models.Stylist:
+def get_stylist(db: Session, stylist_id: int) -> Stylist:
     """Get stylist by ID."""
-    stylist = db.query(models.Stylist).filter(models.Stylist.id == stylist_id).first()
+    stylist = db.query(Stylist).filter(Stylist.id == stylist_id).first()
     if not stylist:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Stylist not found")
     return stylist
 
-def get_stylist_availability(db: Session, stylist_id: int, date: datetime) -> List[models.StylistAvailability]:
+def get_stylist_availability(db: Session, stylist_id: int, date: datetime) -> List[StylistAvailability]:
     """Get stylist availability for a specific date."""
     # Get the start and end of the day
     start_date = date.replace(hour=0, minute=0, second=0, microsecond=0)
     end_date = start_date + timedelta(days=1)
     
     stylist = get_stylist(db, stylist_id)
-    availability = db.query(models.StylistAvailability).filter(
-        models.StylistAvailability.stylist_id == stylist_id,
-        models.StylistAvailability.start_time >= start_date,
-        models.StylistAvailability.start_time < end_date
+    availability = db.query(StylistAvailability).filter(
+        StylistAvailability.stylist_id == stylist_id,
+        StylistAvailability.start_time >= start_date,
+        StylistAvailability.start_time < end_date
     ).all()
     
     return availability
 
-def get_bookings_for_date(db: Session, date: datetime) -> List[models.Booking]:
-    """Get all bookings for a specific date."""
-    # Get the start and end of the day
-    start_date = date.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_date = start_date + timedelta(days=1)
-    
-    return db.query(models.Booking).filter(
-        models.Booking.start_time >= start_date,
-        models.Booking.start_time < end_date
+def get_bookings_for_time_range(
+    db: Session,
+    stylist_id: int,
+    start_time: datetime,
+    end_time: datetime
+) -> List[Booking]:
+    """Get all bookings for a stylist within a specific time range."""
+    return db.query(Booking).filter(
+        Booking.stylist_id == stylist_id,
+        Booking.status != "CANCELLED", # Exclude cancelled bookings
+        or_(
+            and_(Booking.start_time >= start_time, Booking.start_time < end_time),
+            and_(Booking.end_time > start_time, Booking.end_time <= end_time),
+            and_(Booking.start_time <= start_time, Booking.end_time >= end_time)
+        )
     ).all()
 
-def get_available_slots(db: Session, stylist_id: int, date: datetime, user_vip_level: int = 0) -> List[Dict[str, Any]]:
-    """Get all available booking slots for a specific stylist and date."""
+def get_available_slots(
+    db: Session,
+    stylist_id: int,
+    date: datetime,
+    service_id: int,
+    user_vip_level: int = 0
+) -> List[Dict[str, Any]]:
+    """Get all available booking slots for a specific stylist, date, and service."""
+    
+    # Get service duration
+    service = db.query(Service).filter(Service.id == service_id).first()
+    if not service:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service not found")
+        
+    service_duration = timedelta(minutes=service.duration)
+    
     availability = get_stylist_availability(db, stylist_id, date)
-    bookings = db.query(models.Booking).filter(
-        models.Booking.stylist_id == stylist_id,
-        models.Booking.start_time >= date.replace(hour=0, minute=0, second=0, microsecond=0),
-        models.Booking.start_time < (date.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1))
-    ).all()
     
-    # Get the booked time slots
-    booked_slots = []
-    for booking in bookings:
-        booked_slots.append((booking.start_time, booking.end_time))
+    # Get existing bookings for the stylist on the given date
+    start_of_day = date.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_day = start_of_day + timedelta(days=1)
+    existing_bookings = get_bookings_for_time_range(db, stylist_id, start_of_day, end_of_day)
     
-    # Calculate available slots
     available_slots = []
     for avail in availability:
-        # Create 30-minute slots within the availability period
+        # Generate potential slots based on service duration within availability
         current_time = avail.start_time
-        while current_time + timedelta(minutes=30) <= avail.end_time:
-            slot_end_time = current_time + timedelta(minutes=30)
+        while current_time + service_duration <= avail.end_time:
+            slot_end_time = current_time + service_duration
             
-            # Check if the slot is already booked
+            # Check for overlaps with existing bookings
             is_booked = False
-            for booked_start, booked_end in booked_slots:
-                if (current_time >= booked_start and current_time < booked_end) or \
-                   (slot_end_time > booked_start and slot_end_time <= booked_end) or \
-                   (current_time <= booked_start and slot_end_time >= booked_end):
+            for booking in existing_bookings:
+                 if (current_time < booking.end_time and slot_end_time > booking.start_time):
                     is_booked = True
                     break
             
-            # Check VIP restrictions (vip_restricted flag)
+            # Check VIP restrictions
             is_vip_restricted = avail.vip_restricted
             is_vip_accessible = not is_vip_restricted or (is_vip_restricted and user_vip_level >= 1)
             
-            if not is_booked and is_vip_accessible:
+            # Check if the slot is in the past
+            is_in_past = current_time < datetime.now()
+            
+            if not is_booked and is_vip_accessible and not is_in_past:
                 available_slots.append({
                     "start_time": current_time.isoformat(),
                     "end_time": slot_end_time.isoformat(),
                     "is_vip_only": is_vip_restricted
                 })
             
-            current_time = slot_end_time
-    
+            current_time += timedelta(minutes=15) # Move to the next potential start time (e.g., every 15 mins)
+            
+    # Sort available slots by start time
+    available_slots.sort(key=lambda x: x['start_time'])
+
     return available_slots
 
 def create_booking(
     db: Session, 
     user_id: int, 
     stylist_id: int, 
-    service_type: str, 
+    service_id: int,
     start_time: datetime
-) -> models.Booking:
+) -> Booking:
     """Create a new booking."""
-    # Check if the stylist exists
+    # Check if the stylist and service exist
     stylist = get_stylist(db, stylist_id)
+    service = db.query(Service).filter(Service.id == service_id).first()
+    if not service:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service not found")
+
+    # Calculate end time based on service duration
+    end_time = start_time + timedelta(minutes=service.duration)
     
-    # Calculate end time (assuming 30 minutes per booking)
-    end_time = start_time + timedelta(minutes=30)
-    
-    # Check if the slot is available
-    slot_available = False
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    
-    available_slots = get_available_slots(db, stylist_id, start_time, user.vip_level)
-    for slot in available_slots:
-        slot_start = datetime.fromisoformat(slot["start_time"])
-        if slot_start == start_time:
-            # If this is a VIP-only slot, ensure the user has VIP status
-            if slot["is_vip_only"] and user.vip_level < 1:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN, 
-                    detail="This slot is available to VIP members only"
-                )
-            slot_available = True
-            break
-    
-    if not slot_available:
+    # Check for overlapping bookings for the stylist in the requested time range
+    overlapping_bookings = get_bookings_for_time_range(db, stylist_id, start_time, end_time)
+    if overlapping_bookings:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
+            status_code=status.HTTP_409_CONFLICT,
             detail="The selected time slot is not available"
         )
-    
-    # Create booking
-    booking = models.Booking(
+
+    # Create the booking
+    booking = Booking(
         user_id=user_id,
         stylist_id=stylist_id,
-        service_type=service_type,
+        service_id=service_id,
         start_time=start_time,
         end_time=end_time,
-        status="SCHEDULED"
+        status="CONFIRMED"
     )
     
-    # Add and commit to DB
     db.add(booking)
     db.commit()
     db.refresh(booking)
+
+    # --- Notification Triggering ---
+    # Get user settings
+    user_settings = db.query(UserSetting).filter(UserSetting.user_id == user_id).first()
     
-    # Update user loyalty points (as a reward for booking)
-    user.loyalty_points += 10  # Add 10 points per booking
-    db.commit()
+    # Prepare notification content
+    notification_title = "Booking Confirmation"
+    notification_message = (
+        f"Your booking has been confirmed!\n"
+        f"Service: {service.name}\n"
+        f"Date: {start_time.strftime('%Y-%m-%d')}\n"
+        f"Time: {start_time.strftime('%H:%M')}\n"
+        f"Stylist: {stylist.name}"
+    )
+    
+    if user_settings:
+        # Send local notification
+        if user_settings.enable_notifications:
+            create_notification(
+                db=db,
+                user_id=user_id,
+                notification_type=NotificationType.BOOKING_CONFIRMATION,
+                title=notification_title,
+                message=notification_message,
+                method="local"
+            )
+        
+        # Send email notification
+        if user_settings.enable_email_notifications:
+            create_notification(
+                db=db,
+                user_id=user_id,
+                notification_type=NotificationType.BOOKING_CONFIRMATION,
+                title=notification_title,
+                message=notification_message,
+                method="email"
+            )
+        
+        # Send SMS notification
+        if user_settings.enable_sms_notifications:
+            create_notification(
+                db=db,
+                user_id=user_id,
+                notification_type=NotificationType.BOOKING_CONFIRMATION,
+                title=notification_title,
+                message=notification_message,
+                method="sms"
+            )
     
     return booking
 
-def get_user_bookings(db: Session, user_id: int) -> List[models.Booking]:
-    """Get all bookings for a specific user."""
-    return db.query(models.Booking).filter(models.Booking.user_id == user_id).all()
+def get_user_bookings(db: Session, user_id: int) -> List[Booking]:
+    """Get all bookings for a user."""
+    return db.query(Booking).filter(Booking.user_id == user_id).all()
 
-def cancel_booking(db: Session, booking_id: int, user_id: int) -> models.Booking:
+def cancel_booking(db: Session, booking_id: int, user_id: int) -> Booking:
     """Cancel a booking."""
-    booking = db.query(models.Booking).filter(
-        models.Booking.id == booking_id,
-        models.Booking.user_id == user_id
+    booking = db.query(Booking).filter(
+        Booking.id == booking_id,
+        Booking.user_id == user_id
     ).first()
     
     if not booking:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail="Booking not found or does not belong to the current user"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Booking not found"
         )
     
-    # Check if the booking is already cancelled
     if booking.status == "CANCELLED":
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Booking is already cancelled"
         )
     
-    # Check if the booking is in the past
-    if booking.start_time < datetime.now():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="Cannot cancel bookings in the past"
-        )
+    # Get service and stylist details for notification
+    service = db.query(Service).filter(Service.id == booking.service_id).first()
+    stylist = get_stylist(db, booking.stylist_id)
     
     # Update booking status
     booking.status = "CANCELLED"
     db.commit()
     db.refresh(booking)
     
+    # --- Notification Triggering ---
+    # Get user settings
+    user_settings = db.query(UserSetting).filter(UserSetting.user_id == user_id).first()
+    
+    # Prepare notification content
+    notification_title = "Booking Cancellation"
+    notification_message = (
+        f"Your booking has been cancelled.\n"
+        f"Service: {service.name}\n"
+        f"Date: {booking.start_time.strftime('%Y-%m-%d')}\n"
+        f"Time: {booking.start_time.strftime('%H:%M')}\n"
+        f"Stylist: {stylist.name}"
+    )
+    
+    if user_settings:
+        # Send local notification
+        if user_settings.enable_notifications:
+            create_notification(
+                db=db,
+                user_id=user_id,
+                notification_type=NotificationType.BOOKING_CANCELLATION,
+                title=notification_title,
+                message=notification_message,
+                method="local"
+            )
+        
+        # Send email notification
+        if user_settings.enable_email_notifications:
+            create_notification(
+                db=db,
+                user_id=user_id,
+                notification_type=NotificationType.BOOKING_CANCELLATION,
+                title=notification_title,
+                message=notification_message,
+                method="email"
+            )
+        
+        # Send SMS notification
+        if user_settings.enable_sms_notifications:
+            create_notification(
+                db=db,
+                user_id=user_id,
+                notification_type=NotificationType.BOOKING_CANCELLATION,
+                title=notification_title,
+                message=notification_message,
+                method="sms"
+            )
+            
+    # --- Trigger Last-Minute Availability Notification ---
+    # Prepare booking details to pass to the notification function
+    booking_details = {
+        "service_name": service.name,
+        "stylist_name": stylist.name,
+        "date": booking.start_time.strftime('%Y-%m-%d'),
+        "time": booking.start_time.strftime('%H:%M'),
+        "start_time": booking.start_time, # Pass datetime object for potential future use
+        "end_time": booking.end_time # Pass datetime object for potential future use
+    }
+    send_last_minute_availability_notifications(db, booking_details)
+
     return booking
 
 def setup_test_data(db: Session):
-    """Set up test data for the application."""
+    """Helper function to set up test data."""
     # Create some stylists if none exist
     if db.query(models.Stylist).count() == 0:
         stylists = [
@@ -351,4 +467,191 @@ def setup_test_data(db: Session):
                     vip_restricted=vip_restricted
                 ))
         
-        db.commit() 
+        db.commit()
+
+    # Create some services if none exist
+    if db.query(Service).count() == 0:
+        # Assuming Service Categories exist with IDs 1, 2, 3 for Haircuts, Color, Styling
+        services = [
+            Service(name="Men's Haircut", description="Classic or modern men's haircut.", price=25.0, duration=30, category_id=1, is_active=True),
+            Service(name="Women's Haircut", description="Stylish women's haircut.", price=40.0, duration=60, category_id=1, is_active=True),
+            Service(name="Hair Coloring (Full)", description="Full hair color application.", price=80.0, duration=120, category_id=2, is_active=True),
+            Service(name="Highlights", description="Partial or full highlights.", price=100.0, duration=150, category_id=2, is_active=True),
+            Service(name="Styling & Blowout", description="Wash, blow-dry, and styling.", price=30.0, duration=45, category_id=3, is_active=True),
+            Service(name="Beard Trim", description="Trimming and shaping of beard.", price=20.0, duration=20, category_id=1, is_active=True),
+        ]
+        db.add_all(services)
+        db.commit()
+
+
+# New functions for booking history and upcoming bookings
+def get_user_booking_history(
+    db: Session,
+    user_id: int,
+    skip: int = 0,
+    limit: int = 10
+) -> List[Booking]:
+    """Get past bookings for a user."""
+    return db.query(Booking).filter(
+        and_(
+            Booking.user_id == user_id,
+            Booking.end_time < datetime.now()
+        )
+    ).order_by(Booking.start_time.desc()).offset(skip).limit(limit).all()
+
+def get_user_upcoming_bookings(
+    db: Session,
+    user_id: int,
+    skip: int = 0,
+    limit: int = 10
+) -> List[Booking]:
+    """Get upcoming bookings for a user."""
+    return db.query(Booking).filter(
+        and_(
+            Booking.user_id == user_id,
+            Booking.end_time >= datetime.now()
+        )
+    ).order_by(Booking.start_time.asc()).offset(skip).limit(limit).all()
+
+def send_booking_reminder(db: Session, booking_id: int) -> bool:
+    """
+    Send a reminder notification for an upcoming booking.
+    This function should be called by a scheduled task (e.g., Celery) 24 hours before the booking.
+    """
+    booking = db.query(Booking).filter(
+        Booking.id == booking_id,
+        Booking.status == "CONFIRMED"
+    ).first()
+    
+    if not booking:
+        logger.warning(f"Booking {booking_id} not found or not confirmed")
+        return False
+    
+    # Get service and stylist details
+    service = db.query(Service).filter(Service.id == booking.service_id).first()
+    stylist = get_stylist(db, booking.stylist_id)
+    
+    # Get user settings
+    user_settings = db.query(UserSetting).filter(UserSetting.user_id == booking.user_id).first()
+    
+    if not user_settings or not user_settings.enable_booking_reminders:
+        logger.info(f"User {booking.user_id} has disabled booking reminders")
+        return False
+    
+    # Prepare notification content
+    notification_title = "Booking Reminder"
+    notification_message = (
+        f"Reminder: You have a booking tomorrow!\n"
+        f"Service: {service.name}\n"
+        f"Date: {booking.start_time.strftime('%Y-%m-%d')}\n"
+        f"Time: {booking.start_time.strftime('%H:%M')}\n"
+        f"Stylist: {stylist.name}"
+    )
+    
+    # Send notifications based on user preferences
+    notifications_sent = False
+    
+    if user_settings.enable_notifications:
+        create_notification(
+            db=db,
+            user_id=booking.user_id,
+            notification_type=NotificationType.BOOKING_REMINDER,
+            title=notification_title,
+            message=notification_message,
+            method="local"
+        )
+        notifications_sent = True
+    
+    if user_settings.enable_email_notifications:
+        create_notification(
+            db=db,
+            user_id=booking.user_id,
+            notification_type=NotificationType.BOOKING_REMINDER,
+            title=notification_title,
+            message=notification_message,
+            method="email"
+        )
+        notifications_sent = True
+    
+    if user_settings.enable_sms_notifications:
+        create_notification(
+            db=db,
+            user_id=booking.user_id,
+            notification_type=NotificationType.BOOKING_REMINDER,
+            title=notification_title,
+            message=notification_message,
+            method="sms"
+        )
+        notifications_sent = True
+    
+    return notifications_sent
+
+def send_booking_feedback_request(db: Session, booking_id: int) -> bool:
+    """
+    Send a feedback request notification after a completed booking.
+    This function should be called by a scheduled task after the booking end time.
+    """
+    booking = db.query(Booking).filter(
+        Booking.id == booking_id,
+        Booking.status == "CONFIRMED"
+    ).first()
+    
+    if not booking:
+        logger.warning(f"Booking {booking_id} not found or not confirmed")
+        return False
+    
+    # Get service and stylist details
+    service = db.query(Service).filter(Service.id == booking.service_id).first()
+    stylist = get_stylist(db, booking.stylist_id)
+    
+    # Get user settings
+    user_settings = db.query(UserSetting).filter(UserSetting.user_id == booking.user_id).first()
+    
+    if not user_settings:
+        logger.info(f"No user settings found for user {booking.user_id}")
+        return False
+    
+    # Prepare notification content
+    notification_title = "How was your experience?"
+    notification_message = (
+        f"We hope you enjoyed your {service.name} with {stylist.name}!\n"
+        f"Please take a moment to rate your experience and provide feedback."
+    )
+    
+    # Send notifications based on user preferences
+    notifications_sent = False
+    
+    if user_settings.enable_notifications:
+        create_notification(
+            db=db,
+            user_id=booking.user_id,
+            notification_type=NotificationType.FEEDBACK_REQUEST,
+            title=notification_title,
+            message=notification_message,
+            method="local"
+        )
+        notifications_sent = True
+    
+    if user_settings.enable_email_notifications:
+        create_notification(
+            db=db,
+            user_id=booking.user_id,
+            notification_type=NotificationType.FEEDBACK_REQUEST,
+            title=notification_title,
+            message=notification_message,
+            method="email"
+        )
+        notifications_sent = True
+    
+    if user_settings.enable_sms_notifications:
+        create_notification(
+            db=db,
+            user_id=booking.user_id,
+            notification_type=NotificationType.FEEDBACK_REQUEST,
+            title=notification_title,
+            message=notification_message,
+            method="sms"
+        )
+        notifications_sent = True
+    
+    return notifications_sent
