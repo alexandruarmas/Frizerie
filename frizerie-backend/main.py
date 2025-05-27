@@ -6,7 +6,8 @@ from secure import Secure
 import traceback
 
 from dotenv import load_dotenv
-load_dotenv()
+if os.path.exists('.env'):
+    load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
