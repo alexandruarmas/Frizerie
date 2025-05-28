@@ -169,7 +169,7 @@ try:
     @app.middleware("http")
     async def set_secure_headers(request, call_next):
         response = await call_next(request)
-        for header, value in secure.headers.items():
+        for header, value in secure.headers().items():
             response.headers[header] = value
         return response
 
