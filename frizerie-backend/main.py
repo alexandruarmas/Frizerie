@@ -187,6 +187,7 @@ except Exception as e:
 
 # Root endpoint for API health check
 @app.get("/")
+@app.head("/")
 async def root():
     try:
         return {"status": "healthy", "version": settings.APP_VERSION}
@@ -195,6 +196,7 @@ async def root():
         return {"error": str(e)}
 
 @app.get("/health")
+@app.head("/health")
 async def health_check():
     return {"status": "healthy", "database": settings.DATABASE_URL}
 

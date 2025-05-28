@@ -44,6 +44,13 @@ class ErrorLoggingMiddleware(BaseHTTPMiddleware):
                     )
                 )
             
+            # Ensure we always return a response
+            if response is None:
+                return JSONResponse(
+                    status_code=200,
+                    content={"status": "ok"}
+                )
+            
             return response
             
         except Exception as e:
