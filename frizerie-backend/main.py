@@ -141,7 +141,9 @@ try:
             }
         )
 
-    limiter = Limiter(key_func=get_remote_address, default_limits=["25/second"], storage_uri='memory://', env_file=None)
+    # Create a custom config for the limiter
+    limiter_config = Config(environ=os.environ)
+    limiter = Limiter(key_func=get_remote_address, default_limits=["25/second"], storage_uri='memory://', app_config=limiter_config)
 
     app.state.limiter = limiter
     app.add_middleware(SlowAPIMiddleware)
