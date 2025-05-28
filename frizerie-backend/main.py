@@ -141,7 +141,7 @@ try:
             }
         )
 
-    limiter = Limiter(key_func=get_remote_address, default_limits=["5/second"])
+    limiter = Limiter(key_func=get_remote_address, default_limits=["25/second"], storage_uri='memory://')
 
     app.state.limiter = limiter
     app.add_middleware(SlowAPIMiddleware)
