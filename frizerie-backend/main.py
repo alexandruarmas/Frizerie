@@ -33,6 +33,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from starlette.config import Config
 
 try:
     # Change imports to use the correct package name
@@ -140,7 +141,8 @@ try:
             }
         )
 
-    limiter = Limiter(key_func=get_remote_address, default_limits=["5/second"])
+    config = Config(environ=os.environ)
+    limiter = Limiter(key_func=get_remote_address, default_limits=["5/second"], config=config)
 
     app.state.limiter = limiter
     app.add_middleware(SlowAPIMiddleware)
