@@ -141,7 +141,7 @@ try:
             }
         )
 
-    limiter = Limiter(key_func=get_remote_address, default_limits=["5/second"], config=Config(environ=os.environ))
+    limiter = Limiter(key_func=get_remote_address, default_limits=["5/second"])
 
     app.state.limiter = limiter
     app.add_middleware(SlowAPIMiddleware)
