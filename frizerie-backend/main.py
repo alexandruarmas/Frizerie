@@ -31,6 +31,11 @@ from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.orm import Session
 from starlette.config import Config
 
+# Add fastapi-limiter imports
+from fastapi_limiter import FastAPILimiter
+from fastapi_limiter.depends import RateLimiter
+from fastapi_limiter.util import get_remote_address
+
 try:
     # Change imports to use the correct package name
     from config.database import engine, Base
@@ -162,11 +167,6 @@ try:
     async def trigger_error():
         division_by_zero = 1 / 0
 
-    # Limiter initialization
-    from fastapi_limiter import FastAPILimiter
-    from fastapi_limiter.depends import RateLimiter
-    from fastapi_limiter.util import get_remote_address
-
     # Initialize the limiter with memory storage
     limiter = FastAPILimiter(
         key_func=get_remote_address,
@@ -176,7 +176,7 @@ try:
 
     @app.on_event("startup")
     async def startup():
-        await FastAPILimiter.init(None)  # None for memory storage
+        await FastAPILimiter.init(redis=None)  # None for memory storage
 
 except Exception as e:
     logger.error(f"APP STARTUP ERROR: {e}")
