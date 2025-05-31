@@ -70,7 +70,7 @@ class Settings(BaseSettings):
     STRIPE_WEBHOOK_SECRET: str = "your-stripe-webhook-secret"
     STRIPE_RETURN_URL: str = "http://localhost:5173/payment/confirm"
     
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+    # model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
 @lru_cache()
 def get_settings() -> Settings:
