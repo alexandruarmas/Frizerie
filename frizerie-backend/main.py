@@ -29,10 +29,6 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.orm import Session
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
 from starlette.config import Config
 
 try:
@@ -139,20 +135,6 @@ try:
                 "detail": f"{exc}",
                 "traceback": tb
             }
-        )
-
-    # Create a custom config for the limiter
-    limiter_config = Config(environ=os.environ)
-    limiter = Limiter(key_func=get_remote_address, default_limits=["25/second"], storage_uri='memory://', config=limiter_config)
-
-    app.state.limiter = limiter
-    app.add_middleware(SlowAPIMiddleware)
-
-    @app.exception_handler(RateLimitExceeded)
-    async def rate_limit_handler(request, exc):
-        return JSONResponse(
-            status_code=429,
-            content={"detail": "Rate limit exceeded. Please try again later."}
         )
 
     # --- Sentry Error Monitoring ---
