@@ -28,4 +28,3 @@ psycopg2-binary
 aiosmtplib
 firebase-admin
 pandas
-fastapi-limiter==0.1.5
