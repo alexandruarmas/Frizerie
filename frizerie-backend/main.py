@@ -34,7 +34,7 @@ from starlette.config import Config
 # Add fastapi-limiter imports
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
-from fastapi_limiter.util import get_remote_address
+from fastapi_limiter import get_remote_address
 
 try:
     # Change imports to use the correct package name
