@@ -177,15 +177,24 @@ except Exception as e:
 @app.head("/")
 async def root():
     try:
-        return {"status": "healthy", "version": settings.APP_VERSION}
+        return JSONResponse(
+            content={"status": "healthy", "version": settings.APP_VERSION},
+            status_code=200
+        )
     except Exception as e:
         logger.error("ROOT ENDPOINT ERROR:", e)
-        return {"error": str(e)}
+        return JSONResponse(
+            content={"error": str(e)},
+            status_code=500
+        )
 
 @app.get("/health")
 @app.head("/health")
 async def health_check():
-    return {"status": "healthy", "database": settings.DATABASE_URL}
+    return JSONResponse(
+        content={"status": "healthy", "database": settings.DATABASE_URL},
+        status_code=200
+    )
 
 # Custom OpenAPI schema
 def custom_openapi():
