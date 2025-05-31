@@ -5,8 +5,8 @@ import sentry_sdk
 from secure import Secure
 import traceback
 
-from dotenv import load_dotenv
-load_dotenv()
+# from dotenv import load_dotenv
+# load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -32,6 +32,9 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+
+# Import Config from starlette.config
+from starlette.config import Config
 
 try:
     # Change imports to use the correct package name
@@ -139,7 +142,10 @@ try:
             }
         )
 
-    limiter = Limiter(key_func=get_remote_address, default_limits=["5/second"])
+    # Create a Config object that reads from environment variables
+    config = Config()
+    # Pass config_filename=None to prevent Limiter from looking for .env
+    limiter = Limiter(key_func=get_remote_address, default_limits=["5/second"], app_config=config, config_filename=None)
 
     app.state.limiter = limiter
     app.add_middleware(SlowAPIMiddleware)
