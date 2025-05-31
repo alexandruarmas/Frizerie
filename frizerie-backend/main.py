@@ -28,10 +28,10 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.orm import Session
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
+# from slowapi import Limiter
+# from slowapi.util import get_remote_address
+# from slowapi.errors import RateLimitExceeded
+# from slowapi.middleware import SlowAPIMiddleware
 
 # Import Config from starlette.config
 from starlette.config import Config
@@ -145,17 +145,17 @@ try:
     # Create a Config object that reads from environment variables
     config = Config()
     # Pass config_filename=None to prevent Limiter from looking for .env
-    limiter = Limiter(key_func=get_remote_address, default_limits=["5/second"], app=app)
+    # limiter = Limiter(key_func=get_remote_address, default_limits=["5/second"], app=app)
 
-    app.state.limiter = limiter
-    app.add_middleware(SlowAPIMiddleware)
+    # app.state.limiter = limiter
+    # app.add_middleware(SlowAPIMiddleware)
 
-    @app.exception_handler(RateLimitExceeded)
-    async def rate_limit_handler(request, exc):
-        return JSONResponse(
-            status_code=429,
-            content={"detail": "Rate limit exceeded. Please try again later."}
-        )
+    # @app.exception_handler(RateLimitExceeded)
+    # async def rate_limit_handler(request, exc):
+    #     return JSONResponse(
+    #         status_code=429,
+    #         content={"detail": "Rate limit exceeded. Please try again later."}
+    #     )
 
     # --- Sentry Error Monitoring ---
     SENTRY_DSN = os.getenv("SENTRY_DSN")
