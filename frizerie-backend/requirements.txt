@@ -23,4 +23,5 @@ twilio
 slowapi==0.1.8
 sentry-sdk==1.45.0
 secure==0.3.0
-openpyxl==3.1.2 
+openpyxl==3.1.2
+psycopg2-binary==2.9.9 
