@@ -5,8 +5,9 @@ import sentry_sdk
 from secure import Secure
 import traceback
 
-# from dotenv import load_dotenv
-# load_dotenv()
+from dotenv import load_dotenv
+if os.path.exists('.env'):
+    load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -28,12 +29,6 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.orm import Session
-# from slowapi import Limiter
-# from slowapi.util import get_remote_address
-# from slowapi.errors import RateLimitExceeded
-# from slowapi.middleware import SlowAPIMiddleware
-
-# Import Config from starlette.config
 from starlette.config import Config
 
 try:
@@ -142,21 +137,6 @@ try:
             }
         )
 
-    # Create a Config object that reads from environment variables
-    config = Config()
-    # Pass config_filename=None to prevent Limiter from looking for .env
-    # limiter = Limiter(key_func=get_remote_address, default_limits=["5/second"], app=app)
-
-    # app.state.limiter = limiter
-    # app.add_middleware(SlowAPIMiddleware)
-
-    # @app.exception_handler(RateLimitExceeded)
-    # async def rate_limit_handler(request, exc):
-    #     return JSONResponse(
-    #         status_code=429,
-    #         content={"detail": "Rate limit exceeded. Please try again later."}
-    #     )
-
     # --- Sentry Error Monitoring ---
     SENTRY_DSN = os.getenv("SENTRY_DSN")
     print(f"Sentry DSN in use: {SENTRY_DSN}")
@@ -173,7 +153,7 @@ try:
     @app.middleware("http")
     async def set_secure_headers(request, call_next):
         response = await call_next(request)
-        for header, value in secure.headers.items():
+        for header, value in secure.headers().items():
             response.headers[header] = value
         return response
 
@@ -182,6 +162,22 @@ try:
     async def trigger_error():
         division_by_zero = 1 / 0
 
+    # Limiter initialization
+    from fastapi_limiter import FastAPILimiter
+    from fastapi_limiter.depends import RateLimiter
+    from fastapi_limiter.util import get_remote_address
+
+    # Initialize the limiter with memory storage
+    limiter = FastAPILimiter(
+        key_func=get_remote_address,
+        default_limits=["25/second"],
+        storage_uri='memory://'
+    )
+
+    @app.on_event("startup")
+    async def startup():
+        await FastAPILimiter.init(None)  # None for memory storage
+
 except Exception as e:
     logger.error(f"APP STARTUP ERROR: {e}")
     traceback.print_exc()
@@ -189,6 +185,7 @@ except Exception as e:
 
 # Root endpoint for API health check
 @app.get("/")
+@app.head("/")
 async def root():
     try:
         return {"status": "healthy", "version": settings.APP_VERSION}
@@ -197,6 +194,7 @@ async def root():
         return {"error": str(e)}
 
 @app.get("/health")
+@app.head("/health")
 async def health_check():
     return {"status": "healthy", "database": settings.DATABASE_URL}
 
