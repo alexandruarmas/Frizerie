@@ -145,7 +145,7 @@ try:
     # Create a Config object that reads from environment variables
     config = Config()
     # Pass config_filename=None to prevent Limiter from looking for .env
-    limiter = Limiter(key_func=get_remote_address, default_limits=["5/second"], app_config=config, config_filename=None)
+    limiter = Limiter(key_func=get_remote_address, default_limits=["5/second"], app=app)
 
     app.state.limiter = limiter
     app.add_middleware(SlowAPIMiddleware)
