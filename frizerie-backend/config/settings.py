@@ -65,10 +65,10 @@ class Settings(BaseSettings):
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
     
     # Stripe settings
-    STRIPE_SECRET_KEY: str
-    STRIPE_PUBLISHABLE_KEY: str
-    STRIPE_WEBHOOK_SECRET: str
-    STRIPE_RETURN_URL: str
+    STRIPE_SECRET_KEY: str = "your-stripe-secret-key"
+    STRIPE_PUBLISHABLE_KEY: str = "your-stripe-publishable-key"
+    STRIPE_WEBHOOK_SECRET: str = "your-stripe-webhook-secret"
+    STRIPE_RETURN_URL: str = "http://localhost:5173/payment/confirm"
     
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
