@@ -96,7 +96,8 @@ try:
         allow_origins=[
             "https://frizerie-git-master-alexandruarmas02-gmailcoms-projects.vercel.app",
             "http://localhost:5173",
-            "http://localhost:5174"
+            "http://localhost:5174",
+            "https://frizerie.vercel.app"
         ],
         allow_credentials=True,
         allow_methods=["*"],
