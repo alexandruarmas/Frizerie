@@ -158,6 +158,8 @@ try:
     @app.middleware("http")
     async def set_secure_headers(request, call_next):
         response = await call_next(request)
+        if response is None:
+            response = JSONResponse(status_code=200, content={"status": "ok"})
         for header, value in secure.headers().items():
             response.headers[header] = value
         return response
