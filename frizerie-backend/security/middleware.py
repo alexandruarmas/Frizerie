@@ -25,14 +25,14 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app,
-        rate_limit_window: int = 60,  # 1 minute window
-        max_requests_per_window: int = 100,  # 100 requests per minute
+        # rate_limit_window: int = 60,  # 1 minute window
+        # max_requests_per_window: int = 100,  # 100 requests per minute
         excluded_paths: set = None,
         require_api_key: bool = True
     ):
         super().__init__(app)
-        self.rate_limit_window = rate_limit_window
-        self.max_requests_per_window = max_requests_per_window
+        # self.rate_limit_window = rate_limit_window
+        # self.max_requests_per_window = max_requests_per_window
         self.excluded_paths = excluded_paths or {
             "/docs",
             "/redoc",
@@ -76,17 +76,17 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                     )
                 
                 # Check rate limit
-                if not check_rate_limit(
-                    db,
-                    key_hash,
-                    request.url.path,
-                    self.rate_limit_window,
-                    self.max_requests_per_window
-                ):
-                    raise HTTPException(
-                        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                        detail="Rate limit exceeded"
-                    )
+                # if not check_rate_limit(
+                #     db,
+                #     key_hash,
+                #     request.url.path,
+                #     self.rate_limit_window,
+                #     self.max_requests_per_window
+                # ):
+                #     raise HTTPException(
+                #         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                #         detail="Rate limit exceeded"
+                #     )
             
             # Validate request
             await self.validate_request(request)

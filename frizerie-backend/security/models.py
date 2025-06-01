@@ -15,7 +15,7 @@ class APIKey(Base):
     key_hash = Column(String(64), unique=True, index=True, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String(100), nullable=False)
-    rate_limit = Column(Integer, default=100, nullable=False)
+    # rate_limit = Column(Integer, default=100, nullable=False)  # Commented for development
     is_active = Column(Boolean, default=True, nullable=False)
     expires_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
@@ -24,21 +24,21 @@ class APIKey(Base):
     
     # Relationships
     user = relationship("User", back_populates="api_keys")
-    rate_limits = relationship("RateLimit", back_populates="api_key")
+    # rate_limits = relationship("RateLimit", back_populates="api_key")  # Commented for development
     request_logs = relationship("RequestLog", back_populates="api_key")
     security_events = relationship("SecurityEvent", back_populates="api_key")
 
-class RateLimit(Base):
-    """Model for tracking rate limits."""
-    __tablename__ = "rate_limits"
+# class RateLimit(Base):  # Commented for development
+#     """Model for tracking rate limits."""
+#     __tablename__ = "rate_limits"
     
-    id = Column(Integer, primary_key=True, index=True)
-    key_hash = Column(String(64), ForeignKey("api_keys.key_hash"), nullable=False)
-    endpoint = Column(String(255), nullable=False)
-    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+#     id = Column(Integer, primary_key=True, index=True)
+#     key_hash = Column(String(64), ForeignKey("api_keys.key_hash"), nullable=False)
+#     endpoint = Column(String(255), nullable=False)
+#     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     
-    # Relationships
-    api_key = relationship("APIKey", back_populates="rate_limits")
+#     # Relationships
+#     api_key = relationship("APIKey", back_populates="rate_limits")
 
 class RequestLog(Base):
     """Model for logging API requests."""

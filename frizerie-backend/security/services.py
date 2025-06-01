@@ -110,36 +110,39 @@ def check_rate_limit(
     max_requests: int
 ) -> bool:
     """Check if a request is within rate limits."""
-    window_start = datetime.utcnow() - timedelta(seconds=window_seconds)
-    
-    # Get the API key's custom rate limit
-    api_key = db.query(APIKey).filter(APIKey.key_hash == key_hash).first()
-    if not api_key:
-        return False
-    
-    max_requests = min(max_requests, api_key.rate_limit)
-    
-    # Count requests in the current window
-    request_count = db.query(func.count(RateLimit.id)).filter(
-        and_(
-            RateLimit.key_hash == key_hash,
-            RateLimit.endpoint == endpoint,
-            RateLimit.created_at >= window_start
-        )
-    ).scalar()
-    
-    if request_count >= max_requests:
-        return False
-    
-    # Log the request
-    rate_limit = RateLimit(
-        key_hash=key_hash,
-        endpoint=endpoint
-    )
-    db.add(rate_limit)
-    db.commit()
-    
+    # Commented out for development
     return True
+    
+    # window_start = datetime.utcnow() - timedelta(seconds=window_seconds)
+    
+    # # Get the API key's custom rate limit
+    # api_key = db.query(APIKey).filter(APIKey.key_hash == key_hash).first()
+    # if not api_key:
+    #     return False
+    
+    # max_requests = min(max_requests, api_key.rate_limit)
+    
+    # # Count requests in the current window
+    # request_count = db.query(func.count(RateLimit.id)).filter(
+    #     and_(
+    #         RateLimit.key_hash == key_hash,
+    #         RateLimit.endpoint == endpoint,
+    #         RateLimit.created_at >= window_start
+    #     )
+    # ).scalar()
+    
+    # if request_count >= max_requests:
+    #     return False
+    
+    # # Log the request
+    # rate_limit = RateLimit(
+    #     key_hash=key_hash,
+    #     endpoint=endpoint
+    # )
+    # db.add(rate_limit)
+    # db.commit()
+    
+    # return True
 
 def log_request(
     db: Session,

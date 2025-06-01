@@ -8,7 +8,7 @@ from datetime import datetime
 class APIKeyBase(BaseModel):
     """Base schema for API key operations."""
     name: str = Field(..., min_length=1, max_length=100)
-    rate_limit: int = Field(default=100, ge=1, le=1000)
+    # rate_limit: int = Field(default=100, ge=1, le=1000)  # Commented for development
     expires_at: Optional[datetime] = None
 
 class APIKeyCreate(APIKeyBase):
@@ -18,7 +18,7 @@ class APIKeyCreate(APIKeyBase):
 class APIKeyUpdate(BaseModel):
     """Schema for updating an API key."""
     name: Optional[str] = Field(None, min_length=1, max_length=100)
-    rate_limit: Optional[int] = Field(None, ge=1, le=1000)
+    # rate_limit: Optional[int] = Field(None, ge=1, le=1000)  # Commented for development
     expires_at: Optional[datetime] = None
     is_active: Optional[bool] = None
 
@@ -39,15 +39,15 @@ class APIKeyWithToken(APIKeyResponse):
     """Schema for API key response including the actual key."""
     api_key: str
 
-class RateLimitResponse(BaseModel):
-    """Schema for rate limit response."""
-    id: int
-    key_hash: str
-    endpoint: str
-    created_at: datetime
+# class RateLimitResponse(BaseModel):  # Commented for development
+#     """Schema for rate limit response."""
+#     id: int
+#     key_hash: str
+#     endpoint: str
+#     created_at: datetime
     
-    class Config:
-        from_attributes = True
+#     class Config:
+#         from_attributes = True
 
 class RequestLogResponse(BaseModel):
     """Schema for request log response."""

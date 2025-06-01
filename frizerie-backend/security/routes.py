@@ -19,7 +19,7 @@ router = APIRouter(
 )
 
 @router.post("/api-keys", response_model=schemas.APIKeyWithToken)
-def create_api_key(
+async def create_api_key(
     api_key_data: schemas.APIKeyCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -29,7 +29,7 @@ def create_api_key(
         db=db,
         user_id=current_user.id,
         name=api_key_data.name,
-        rate_limit=api_key_data.rate_limit,
+        # rate_limit=api_key_data.rate_limit,  # Commented for development
         expires_at=api_key_data.expires_at
     )
     return result
