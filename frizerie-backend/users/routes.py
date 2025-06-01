@@ -55,8 +55,7 @@ async def create_user(
             expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         )
         refresh_token = create_refresh_token(
-            data={"sub": user.email},
-            expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+            data={"sub": user.email}
         )
         
         return {
