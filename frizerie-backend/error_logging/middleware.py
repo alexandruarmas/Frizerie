@@ -24,16 +24,7 @@ class ErrorLoggingMiddleware(BaseHTTPMiddleware):
         db = SessionLocal()
         
         try:
-            # Get response from next middleware/route handler
             response = await call_next(request)
-            
-            # If no response was returned, create a default one
-            if response is None:
-                response = JSONResponse(
-                    status_code=200,
-                    content={"status": "ok"}
-                )
-            
             process_time = time.time() - start_time
             
             # Log successful request
@@ -51,6 +42,13 @@ class ErrorLoggingMiddleware(BaseHTTPMiddleware):
                             "process_time": process_time
                         }
                     )
+                )
+            
+            # Ensure we always return a response
+            if response is None:
+                return JSONResponse(
+                    status_code=200,
+                    content={"status": "ok"}
                 )
             
             return response
@@ -99,7 +97,6 @@ class ErrorLoggingMiddleware(BaseHTTPMiddleware):
             print("UNHANDLED EXCEPTION:", e)
             traceback.print_exc()
             
-            # Return error response
             return JSONResponse(
                 status_code=500,
                 content={"detail": "Internal server error"}
@@ -116,81 +113,42 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
     
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         start_time = time.time()
-        db = SessionLocal()
         
-        try:
-            # Log request start
-            services.SystemLoggingService.create_system_log(
-                db,
-                schemas.SystemLogCreate(
-                    log_level="INFO",
-                    message=f"Request started: {request.method} {request.url.path}",
-                    source="api",
-                    context={
-                        "method": request.method,
-                        "path": request.url.path,
-                        "client_host": request.client.host if request.client else None
-                    }
-                )
+        # Log request start
+        services.SystemLoggingService.create_system_log(
+            SessionLocal(),
+            schemas.SystemLogCreate(
+                log_level="INFO",
+                message=f"Request started: {request.method} {request.url.path}",
+                source="api",
+                context={
+                    "method": request.method,
+                    "path": request.url.path,
+                    "client_host": request.client.host if request.client else None
+                }
             )
-            
-            # Get response from next middleware/route handler
-            response = await call_next(request)
-            
-            # If no response was returned, create a default one
-            if response is None:
-                response = JSONResponse(
-                    status_code=200,
-                    content={"status": "ok"}
-                )
-            
-            process_time = time.time() - start_time
-            
-            # Log request completion
-            services.SystemLoggingService.create_system_log(
-                db,
-                schemas.SystemLogCreate(
-                    log_level="INFO",
-                    message=f"Request completed: {request.method} {request.url.path}",
-                    source="api",
-                    context={
-                        "method": request.method,
-                        "path": request.url.path,
-                        "status_code": response.status_code,
-                        "process_time": process_time
-                    }
-                )
+        )
+        
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        
+        # Log request completion
+        services.SystemLoggingService.create_system_log(
+            SessionLocal(),
+            schemas.SystemLogCreate(
+                log_level="INFO",
+                message=f"Request completed: {request.method} {request.url.path}",
+                source="api",
+                context={
+                    "method": request.method,
+                    "path": request.url.path,
+                    "status_code": response.status_code,
+                    "process_time": process_time
+                }
             )
-            
-            return response
-            
-        except Exception as e:
-            process_time = time.time() - start_time
-            
-            # Log error
-            services.SystemLoggingService.create_system_log(
-                db,
-                schemas.SystemLogCreate(
-                    log_level="ERROR",
-                    message=f"Request failed: {request.method} {request.url.path}",
-                    source="api",
-                    context={
-                        "method": request.method,
-                        "path": request.url.path,
-                        "error": str(e),
-                        "process_time": process_time
-                    }
-                )
-            )
-            
-            # Return error response
-            return JSONResponse(
-                status_code=500,
-                content={"detail": "Internal server error"}
-            )
-            
-        finally:
-            db.close()
+        )
+        
+        return response
 
 class PerformanceMonitoringMiddleware(BaseHTTPMiddleware):
     """Middleware for monitoring request performance."""
@@ -200,76 +158,37 @@ class PerformanceMonitoringMiddleware(BaseHTTPMiddleware):
     
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         start_time = time.time()
-        db = SessionLocal()
+        response = await call_next(request)
+        process_time = time.time() - start_time
         
-        try:
-            # Get response from next middleware/route handler
-            response = await call_next(request)
-            
-            # If no response was returned, create a default one
-            if response is None:
-                response = JSONResponse(
-                    status_code=200,
-                    content={"status": "ok"}
-                )
-            
-            process_time = time.time() - start_time
-            
-            # Record performance metric
-            services.MonitoringService.create_metric(
-                db,
-                schemas.MonitoringMetricCreate(
-                    metric_name="request_duration_seconds",
-                    metric_value=process_time,
-                    metric_type="histogram",
-                    labels={
-                        "method": request.method,
-                        "path": request.url.path,
-                        "status_code": str(response.status_code)
-                    }
-                )
+        # Record performance metric
+        services.MonitoringService.create_metric(
+            SessionLocal(),
+            schemas.MonitoringMetricCreate(
+                metric_name="request_duration_seconds",
+                metric_value=process_time,
+                metric_type="histogram",
+                labels={
+                    "method": request.method,
+                    "path": request.url.path,
+                    "status_code": str(response.status_code)
+                }
             )
-            
-            # Record request count
-            services.MonitoringService.create_metric(
-                db,
-                schemas.MonitoringMetricCreate(
-                    metric_name="request_count_total",
-                    metric_value=1,
-                    metric_type="counter",
-                    labels={
-                        "method": request.method,
-                        "path": request.url.path,
-                        "status_code": str(response.status_code)
-                    }
-                )
+        )
+        
+        # Record request count
+        services.MonitoringService.create_metric(
+            SessionLocal(),
+            schemas.MonitoringMetricCreate(
+                metric_name="request_count_total",
+                metric_value=1,
+                metric_type="counter",
+                labels={
+                    "method": request.method,
+                    "path": request.url.path,
+                    "status_code": str(response.status_code)
+                }
             )
-            
-            return response
-            
-        except Exception as e:
-            process_time = time.time() - start_time
-            
-            # Log error
-            services.MonitoringService.create_metric(
-                db,
-                schemas.MonitoringMetricCreate(
-                    metric_name="request_errors_total",
-                    metric_value=1,
-                    metric_type="counter",
-                    labels={
-                        "method": request.method,
-                        "path": request.url.path,
-                        "error": type(e).__name__
-                    }
-                )
-            )
-            
-            # Return error response
-            return JSONResponse(
-                status_code=500,
-                content={"detail": "Internal server error"}
-            )
-            
-        finally:
-            db.close() 
+        )
+        
+        return response 

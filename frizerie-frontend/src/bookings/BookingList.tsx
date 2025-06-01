@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import bookingsService, { Booking } from '../services/bookings';
+import api from '../services/api';
 
 const BookingList: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -13,26 +14,24 @@ const BookingList: React.FC = () => {
   // Filter state
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming');
   
+  const navigate = useNavigate();
+  
   // Fetch bookings
-  useEffect(() => {
-    const fetchBookings = async () => {
-      setIsLoading(true);
-      
-      try {
-        // In a real app, this would call the API endpoint
-        // For now, using mock data
-        setTimeout(() => {
-          const data = bookingsService.getMockBookings();
-          setBookings(data);
-          setIsLoading(false);
-        }, 1000);
-      } catch (error) {
-        console.error('Error fetching bookings:', error);
-        setError('Failed to load your bookings');
-        setIsLoading(false);
-      }
-    };
+  const fetchBookings = async () => {
+    setIsLoading(true);
     
+    try {
+      const response = await api.get<Booking[]>('/bookings/my-bookings');
+      setBookings(response.data);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+      setError('Failed to load bookings. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
     fetchBookings();
   }, []);
   
@@ -62,31 +61,18 @@ const BookingList: React.FC = () => {
   });
   
   // Handle booking cancellation
-  const handleCancelBooking = async () => {
-    if (!selectedBookingId) return;
-    
-    setIsCancelling(true);
-    
+  const handleCancelBooking = async (bookingId: number) => {
+    if (!window.confirm('Are you sure you want to cancel this booking?')) {
+      return;
+    }
+
     try {
-      // In a real app, this would call the API endpoint
-      // For now, simulating API call with timeout
-      setTimeout(() => {
-        // Update the booking status in the local state
-        setBookings(bookings.map(booking => 
-          booking.id === selectedBookingId 
-            ? { ...booking, status: 'cancelled' as const } 
-            : booking
-        ));
-        
-        setShowCancelModal(false);
-        setIsCancelling(false);
-        setSelectedBookingId(null);
-      }, 1000);
+      await api.delete(`/bookings/${bookingId}`);
+      // Refresh the bookings list
+      fetchBookings();
     } catch (error) {
       console.error('Error cancelling booking:', error);
-      setError('Failed to cancel booking');
-      setIsCancelling(false);
-      setSelectedBookingId(null);
+      setError('Failed to cancel booking. Please try again.');
     }
   };
   
@@ -218,7 +204,7 @@ const BookingList: React.FC = () => {
                 </button>
                 <button
                   className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
-                  onClick={handleCancelBooking}
+                  onClick={() => handleCancelBooking(parseInt(selectedBookingId as string))}
                   disabled={isCancelling}
                 >
                   {isCancelling ? 'Cancelling...' : 'Yes, Cancel'}

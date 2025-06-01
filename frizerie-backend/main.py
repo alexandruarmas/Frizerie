@@ -29,12 +29,11 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.orm import Session
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from starlette.config import Config
-
-# Add fastapi-limiter imports
-# from fastapi_limiter import FastAPILimiter
-# from fastapi_limiter.depends import RateLimiter
-# from fastapi_limiter import get_remote_address
 
 try:
     # Change imports to use the correct package name
@@ -142,6 +141,20 @@ try:
             }
         )
 
+    # Create a custom config for the limiter
+    limiter_config = Config(environ=os.environ)
+    limiter = Limiter(key_func=get_remote_address, default_limits=["25/second"], storage_uri='memory://', app_config=limiter_config)
+
+    app.state.limiter = limiter
+    app.add_middleware(SlowAPIMiddleware)
+
+    @app.exception_handler(RateLimitExceeded)
+    async def rate_limit_handler(request, exc):
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Rate limit exceeded. Please try again later."}
+        )
+
     # --- Sentry Error Monitoring ---
     SENTRY_DSN = os.getenv("SENTRY_DSN")
     print(f"Sentry DSN in use: {SENTRY_DSN}")
@@ -157,20 +170,10 @@ try:
 
     @app.middleware("http")
     async def set_secure_headers(request, call_next):
-        try:
-            response = await call_next(request)
-            if response is None:
-                # For HEAD requests or when no response is returned, create an empty response
-                response = JSONResponse(status_code=200, content={})
-            for header, value in secure.headers().items():
-                response.headers[header] = value
-            return response
-        except Exception as e:
-            logger.error(f"Error in set_secure_headers middleware: {str(e)}")
-            return JSONResponse(
-                status_code=500,
-                content={"detail": "Internal server error"}
-            )
+        response = await call_next(request)
+        for header, value in secure.headers().items():
+            response.headers[header] = value
+        return response
 
     # Sentry debug route for verification
     @app.get("/sentry-debug")
@@ -187,24 +190,15 @@ except Exception as e:
 @app.head("/")
 async def root():
     try:
-        return JSONResponse(
-            content={"status": "healthy", "version": settings.APP_VERSION},
-            status_code=200
-        )
+        return {"status": "healthy", "version": settings.APP_VERSION}
     except Exception as e:
         logger.error("ROOT ENDPOINT ERROR:", e)
-        return JSONResponse(
-            content={"error": str(e)},
-            status_code=500
-        )
+        return {"error": str(e)}
 
 @app.get("/health")
 @app.head("/health")
 async def health_check():
-    return JSONResponse(
-        content={"status": "healthy", "database": settings.DATABASE_URL},
-        status_code=200
-    )
+    return {"status": "healthy", "database": settings.DATABASE_URL}
 
 # Custom OpenAPI schema
 def custom_openapi():

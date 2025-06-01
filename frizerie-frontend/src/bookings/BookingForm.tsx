@@ -1,284 +1,148 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../auth/AuthContext';
-
-interface BookingDetails {
-  barberId: string;
-  serviceId: string;
-  date: string;
-  time: string;
-}
-
-interface Barber {
-  id: string;
-  name: string;
-}
+import api from '../services/api';
 
 interface Service {
-  id: string;
+  id: number;
   name: string;
   price: number;
   duration: number;
 }
 
+interface BookingFormData {
+  date: string;
+  time: string;
+  stylistId: number;
+}
+
 const BookingForm: React.FC = () => {
-  const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const bookingDetails = location.state as BookingDetails;
-  
-  const [barber, setBarber] = useState<Barber | null>(null);
-  const [service, setService] = useState<Service | null>(null);
-  const [notes, setNotes] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  
-  // Redirect if no booking details
+  const [services, setServices] = useState<Service[]>([]);
+  const [selectedService, setSelectedService] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Get booking data from location state
+  const bookingData = location.state as BookingFormData;
+
   useEffect(() => {
-    if (!bookingDetails) {
-      navigate('/bookings/calendar');
-    }
-  }, [bookingDetails, navigate]);
-  
-  // Fetch barber and service details
-  useEffect(() => {
-    if (!bookingDetails) return;
-    
-    const fetchDetails = async () => {
-      try {
-        // In a real app, these would be API calls
-        // Simulating API responses with dummy data
-        setTimeout(() => {
-          // Dummy barber data
-          if (bookingDetails.barberId === '1') {
-            setBarber({
-              id: '1',
-              name: 'Alex Barbulescu'
-            });
-          } else if (bookingDetails.barberId === '2') {
-            setBarber({
-              id: '2',
-              name: 'Maria Stilista'
-            });
-          } else if (bookingDetails.barberId === '3') {
-            setBarber({
-              id: '3',
-              name: 'Ion Frizeru'
-            });
-          } else if (bookingDetails.barberId === '4') {
-            setBarber({
-              id: '4',
-              name: 'Ana Coafeza'
-            });
-          }
-          
-          // Dummy service data
-          if (bookingDetails.serviceId === '1') {
-            setService({
-              id: '1',
-              name: 'Haircut & Styling',
-              duration: 45,
-              price: 35
-            });
-          } else if (bookingDetails.serviceId === '2') {
-            setService({
-              id: '2',
-              name: 'Beard Trim',
-              duration: 20,
-              price: 20
-            });
-          } else if (bookingDetails.serviceId === '3') {
-            setService({
-              id: '3',
-              name: 'Full Service (Cut, Beard, Styling)',
-              duration: 60,
-              price: 55
-            });
-          } else if (bookingDetails.serviceId === '4') {
-            setService({
-              id: '4',
-              name: 'Kids Haircut',
-              duration: 30,
-              price: 25
-            });
-          }
-        }, 500);
-      } catch (error) {
-        console.error('Error fetching booking details:', error);
-        setError('Failed to load booking details');
-      }
-    };
-    
-    fetchDetails();
-  }, [bookingDetails]);
-  
-  // Format date for display
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }).format(date);
-  };
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!bookingDetails || !barber || !service) {
+    if (!bookingData) {
+      navigate('/bookings/new');
       return;
     }
-    
-    setIsSubmitting(true);
-    setError('');
-    
+    fetchServices();
+  }, [bookingData, navigate]);
+
+  const fetchServices = async () => {
     try {
-      // In a real app, this would be an API call
-      // Simulating API call with timeout
-      setTimeout(() => {
-        // Booking successful
-        setSuccess(true);
-        
-        // Redirect to bookings list after short delay
-        setTimeout(() => {
-          navigate('/bookings');
-        }, 2000);
-      }, 1500);
-    } catch (err) {
-      console.error('Booking failed:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create booking');
-    } finally {
-      setIsSubmitting(false);
+      const response = await api.get<Service[]>('/services');
+      setServices(response.data);
+    } catch (error) {
+      console.error('Error fetching services:', error);
+      setError('Failed to load services. Please try again.');
     }
   };
-  
-  if (!bookingDetails || !barber || !service) {
-    return (
-      <div className="container mx-auto p-4">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-center py-4">
-            {error || 'Loading booking details...'}
-          </div>
-        </div>
-      </div>
-    );
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedService || !bookingData) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      await api.post('/bookings', {
+        service_id: selectedService,
+        stylist_id: bookingData.stylistId,
+        date: bookingData.date,
+        time: bookingData.time
+      });
+
+      // Redirect to bookings list on success
+      navigate('/bookings');
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      setError('Failed to create booking. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!bookingData) {
+    return null;
   }
-  
+
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-semibold text-gray-800 mb-6">Confirm Your Booking</h1>
-      
-      {success ? (
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-center py-6">
-            <div className="text-green-500 text-5xl mb-4">✓</div>
-            <h2 className="text-xl font-semibold mb-2">Booking Confirmed!</h2>
-            <p className="text-gray-600 mb-4">
-              Your appointment has been successfully booked. You will be redirected to your bookings.
-            </p>
+    <div className="max-w-2xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">Complete Your Booking</h1>
+
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold mb-2">Booking Details</h2>
+          <div className="space-y-2 text-gray-600">
+            <p>Date: {new Date(bookingData.date).toLocaleDateString()}</p>
+            <p>Time: {bookingData.time}</p>
           </div>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Booking Summary */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="border-b px-6 py-4">
-              <h2 className="font-medium text-lg">Booking Summary</h2>
-            </div>
-            <div className="p-6">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Barber</h3>
-                  <p className="text-lg font-medium">{barber.name}</p>
-                </div>
-                
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Service</h3>
-                  <p className="text-lg font-medium">{service.name}</p>
-                  <p className="text-sm text-gray-600">
-                    ${service.price} • {service.duration} minutes
-                  </p>
-                </div>
-                
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Date & Time</h3>
-                  <p className="text-lg font-medium">
-                    {formatDate(bookingDetails.date)} at {bookingDetails.time}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Booking Form */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="border-b px-6 py-4">
-              <h2 className="font-medium text-lg">Complete Your Booking</h2>
-            </div>
-            <div className="p-6">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Your Name
-                  </label>
-                  <input
-                    type="text"
-                    value={user?.name || ''}
-                    disabled
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={user?.email || ''}
-                    disabled
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Additional Notes (Optional)
-                  </label>
-                  <textarea
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 min-h-[100px]"
-                    placeholder="Any special requests or information for the barber..."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                  />
-                </div>
-                
-                {error && (
-                  <div className="bg-red-50 text-red-700 p-3 rounded-md text-sm">
-                    {error}
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select a Service
+            </label>
+            <div className="space-y-3">
+              {services.map((service) => (
+                <button
+                  key={service.id}
+                  type="button"
+                  onClick={() => setSelectedService(service.id)}
+                  className={`w-full p-4 text-left rounded-lg border ${
+                    selectedService === service.id
+                      ? 'border-indigo-500 bg-indigo-50'
+                      : 'border-gray-200 hover:border-indigo-300'
+                  }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="font-medium">{service.name}</h3>
+                      <p className="text-sm text-gray-600">{service.duration} minutes</p>
+                    </div>
+                    <span className="text-lg font-semibold">${service.price}</span>
                   </div>
-                )}
-                
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    className="w-full px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? 'Processing...' : 'Confirm Booking'}
-                  </button>
-                </div>
-                
-                <div className="text-center text-xs text-gray-500 mt-2">
-                  By confirming this booking, you agree to our cancellation policy.
-                </div>
-              </form>
+                </button>
+              ))}
             </div>
           </div>
-        </div>
-      )}
+
+          {error && (
+            <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700">
+              {error}
+            </div>
+          )}
+
+          <div className="flex space-x-4">
+            <button
+              type="button"
+              onClick={() => navigate('/bookings/new')}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            >
+              Back
+            </button>
+            <button
+              type="submit"
+              disabled={!selectedService || loading}
+              className={`flex-1 px-4 py-2 rounded-md text-white ${
+                !selectedService || loading
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-indigo-600 hover:bg-indigo-700'
+              }`}
+            >
+              {loading ? 'Creating Booking...' : 'Confirm Booking'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
