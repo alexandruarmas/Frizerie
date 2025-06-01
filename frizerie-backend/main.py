@@ -157,12 +157,20 @@ try:
 
     @app.middleware("http")
     async def set_secure_headers(request, call_next):
-        response = await call_next(request)
-        if response is None:
-            response = JSONResponse(status_code=200, content={"status": "ok"})
-        for header, value in secure.headers().items():
-            response.headers[header] = value
-        return response
+        try:
+            response = await call_next(request)
+            if response is None:
+                # For HEAD requests or when no response is returned, create an empty response
+                response = JSONResponse(status_code=200, content={})
+            for header, value in secure.headers().items():
+                response.headers[header] = value
+            return response
+        except Exception as e:
+            logger.error(f"Error in set_secure_headers middleware: {str(e)}")
+            return JSONResponse(
+                status_code=500,
+                content={"detail": "Internal server error"}
+            )
 
     # Sentry debug route for verification
     @app.get("/sentry-debug")
