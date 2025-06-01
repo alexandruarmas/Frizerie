@@ -24,86 +24,94 @@ class ErrorLoggingMiddleware(BaseHTTPMiddleware):
         db = SessionLocal()
         
         try:
+            # Get response from next middleware/route
             response = await call_next(request)
+            
+            # If no response was returned, create a default one
+            if response is None:
+                response = JSONResponse(
+                    status_code=200,
+                    content={"status": "ok"}
+                )
+            
             process_time = time.time() - start_time
             
             # Log successful request
             if response.status_code >= 200 and response.status_code < 400:
-                services.SystemLoggingService.create_system_log(
-                    db,
-                    schemas.SystemLogCreate(
-                        log_level="INFO",
-                        message=f"Request completed: {request.method} {request.url.path}",
-                        source="api",
-                        context={
-                            "method": request.method,
-                            "path": request.url.path,
-                            "status_code": response.status_code,
-                            "process_time": process_time
-                        }
+                try:
+                    services.SystemLoggingService.create_system_log(
+                        db,
+                        schemas.SystemLogCreate(
+                            log_level="INFO",
+                            message=f"Request completed: {request.method} {request.url.path}",
+                            source="api",
+                            context={
+                                "method": request.method,
+                                "path": request.url.path,
+                                "status_code": response.status_code,
+                                "process_time": process_time
+                            }
+                        )
                     )
-                )
-            
-            # Ensure we always return a response
-            if response is None:
-                return JSONResponse(
-                    status_code=200,
-                    content={"status": "ok"}
-                )
+                except Exception as log_error:
+                    print(f"Error logging successful request: {log_error}")
             
             return response
             
         except Exception as e:
             process_time = time.time() - start_time
             
-            # Log error
-            error_log = schemas.ErrorLogCreate(
-                error_type=type(e).__name__,
-                message=str(e),
-                stack_trace=traceback.format_exc(),
-                severity="ERROR",
-                source="api",
-                endpoint=str(request.url.path),
-                method=request.method,
-                status_code=500
-            )
-            
-            # Try to get user ID from request if available
             try:
-                if hasattr(request.state, "user"):
-                    error_log.user_id = request.state.user.id
-            except:
-                pass
-            
-            services.ErrorLoggingService.create_error_log(db, error_log)
-            
-            # Log system event
-            services.SystemLoggingService.create_system_log(
-                db,
-                schemas.SystemLogCreate(
-                    log_level="ERROR",
-                    message=f"Request failed: {request.method} {request.url.path}",
+                # Log error
+                error_log = schemas.ErrorLogCreate(
+                    error_type=type(e).__name__,
+                    message=str(e),
+                    stack_trace=traceback.format_exc(),
+                    severity="ERROR",
                     source="api",
-                    context={
-                        "method": request.method,
-                        "path": request.url.path,
-                        "error": str(e),
-                        "process_time": process_time
-                    }
+                    endpoint=str(request.url.path),
+                    method=request.method,
+                    status_code=500
                 )
-            )
+                
+                # Try to get user ID from request if available
+                try:
+                    if hasattr(request.state, "user"):
+                        error_log.user_id = request.state.user.id
+                except:
+                    pass
+                
+                services.ErrorLoggingService.create_error_log(db, error_log)
+                
+                # Log system event
+                services.SystemLoggingService.create_system_log(
+                    db,
+                    schemas.SystemLogCreate(
+                        log_level="ERROR",
+                        message=f"Request failed: {request.method} {request.url.path}",
+                        source="api",
+                        context={
+                            "method": request.method,
+                            "path": request.url.path,
+                            "error": str(e),
+                            "process_time": process_time
+                        }
+                    )
+                )
+            except Exception as log_error:
+                print(f"Error during error logging: {log_error}")
             
-            # ADD THESE LINES FOR DEBUGGING
-            print("UNHANDLED EXCEPTION:", e)
-            traceback.print_exc()
-            
+            # Return error response
             return JSONResponse(
                 status_code=500,
                 content={"detail": "Internal server error"}
             )
             
         finally:
-            db.close()
+            try:
+                db.close()
+            except:
+                pass
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
     """Middleware for logging all requests."""

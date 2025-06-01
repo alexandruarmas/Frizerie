@@ -90,25 +90,7 @@ try:
     # Register exception handlers
     register_exception_handlers(app)
 
-    # Comment out all routers and middleware for debugging
-    app.add_middleware(LoggingMiddleware)
-    app.middleware("http")(validate_request_middleware)
-    app.add_middleware(AnalyticsMiddleware)
-    app.add_middleware(ErrorLoggingMiddleware)
-    app.add_middleware(RequestLoggingMiddleware)
-    app.add_middleware(PerformanceMonitoringMiddleware)
-
-    app.include_router(auth_router)
-    app.include_router(users_router)
-    app.include_router(bookings_router)
-    app.include_router(notifications_router)
-    app.include_router(services_router)
-    app.include_router(payments_router)
-    app.include_router(analytics_router)
-    app.include_router(admin_router, prefix="/admin", tags=["Admin"])
-    app.include_router(error_logging_router)
-
-    # Configure CORS
+    # Configure CORS first (should be one of the first middleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[
@@ -120,6 +102,60 @@ try:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Add middleware in the correct order with debug logging
+    @app.middleware("http")
+    async def debug_middleware(request: Request, call_next):
+        logger.info(f"Request started: {request.method} {request.url.path}")
+        try:
+            response = await call_next(request)
+            logger.info(f"Request completed: {request.method} {request.url.path} - Status: {response.status_code}")
+            return response
+        except Exception as e:
+            logger.error(f"Request failed: {request.method} {request.url.path} - Error: {str(e)}")
+            return JSONResponse(
+                status_code=500,
+                content={"detail": "Internal server error"}
+            )
+
+    # Add other middleware
+    app.add_middleware(LoggingMiddleware)
+    app.add_middleware(ErrorLoggingMiddleware)
+    app.add_middleware(RequestLoggingMiddleware)
+    app.add_middleware(PerformanceMonitoringMiddleware)
+    app.add_middleware(AnalyticsMiddleware)
+    app.middleware("http")(validate_request_middleware)
+
+    # Security headers middleware
+    @app.middleware("http")
+    async def set_secure_headers(request: Request, call_next):
+        try:
+            response = await call_next(request)
+            if response is None:
+                logger.error("No response returned from call_next in set_secure_headers")
+                return JSONResponse(
+                    status_code=500,
+                    content={"detail": "Internal server error - No response"}
+                )
+            for header, value in secure.headers().items():
+                response.headers[header] = value
+            return response
+        except Exception as e:
+            logger.error(f"Error in set_secure_headers: {str(e)}")
+            return JSONResponse(
+                status_code=500,
+                content={"detail": "Internal server error"}
+            )
+
+    app.include_router(auth_router)
+    app.include_router(users_router)
+    app.include_router(bookings_router)
+    app.include_router(notifications_router)
+    app.include_router(services_router)
+    app.include_router(payments_router)
+    app.include_router(analytics_router)
+    app.include_router(admin_router, prefix="/admin", tags=["Admin"])
+    app.include_router(error_logging_router)
 
     # Mount static files
     app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -172,13 +208,6 @@ try:
 
     # --- Security Headers ---
     secure = Secure()
-
-    @app.middleware("http")
-    async def set_secure_headers(request, call_next):
-        response = await call_next(request)
-        for header, value in secure.headers().items():
-            response.headers[header] = value
-        return response
 
     # Sentry debug route for verification
     @app.get("/sentry-debug")
